@@ -1,46 +1,44 @@
-// PATCH /api/approvals/:id — approve or reject (idempotent, OPERATOR role)
-import { json } from '@sveltejs/kit';
+// PATCH /api/approvals/:id — approve or reject (OPERATOR only, idempotent)
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { appStore, emitAudit } from '$lib/store';
+import { db } from '$lib/store';
 import { PatchApprovalSchema } from '$lib/validation';
 
+export const GET: RequestHandler = ({ params }) => {
+  const approval = db.approvals.findById(params.id);
+  if (!approval) throw error(404, `Approval ${params.id} not found`);
+  return json(approval);
+};
+
 export const PATCH: RequestHandler = async ({ params, request }) => {
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
   const parsed = PatchApprovalSchema.safeParse(body);
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) throw error(400, parsed.error.message);
 
-  const approval = appStore.approvals.find((a) => a.id === params.id);
-  if (!approval) return json({ error: 'Approval not found' }, { status: 404 });
+  const approval = db.approvals.findById(params.id);
+  if (!approval) throw error(404, `Approval ${params.id} not found`);
 
-  const { action, operatorId, notes } = parsed.data;
-  const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+  // Idempotency — same status is a no-op
+  if (approval.status === parsed.data.status) return json(approval);
+  if (approval.status !== 'PENDING') throw error(409, `Approval already ${approval.status}`);
 
-  // Idempotent: already in target state = no-op
-  if (approval.status === newStatus) return json({ approval });
-  // Cannot override a terminal state with the opposite
-  if (approval.status !== 'PENDING') {
-    return json({ error: `Approval is already ${approval.status}` }, { status: 409 });
+  const updated = db.approvals.update(params.id, {
+    status: parsed.data.status,
+    operatorId: parsed.data.operatorId,
+    notes: parsed.data.notes,
+    resolvedAt: new Date().toISOString(),
+  });
+
+  // If approved procurement, advance lot status
+  if (parsed.data.status === 'APPROVED' && approval.approvalType === 'PROCUREMENT') {
+    db.lots.update(approval.entityId, { status: 'PROCUREMENT_CONFIRMED' });
+  }
+  if (parsed.data.status === 'APPROVED' && approval.approvalType === 'FACILITY_BOOKING') {
+    db.lots.update(approval.entityId, { status: 'IN_PRODUCTION' });
+  }
+  if (parsed.data.status === 'APPROVED' && approval.approvalType === 'DELIVERY_RELEASE') {
+    db.lots.update(approval.entityId, { status: 'SHIPPED' });
   }
 
-  const before = { ...approval };
-  approval.status = newStatus;
-  approval.operatorId = operatorId;
-  approval.notes = notes ?? null;
-  approval.resolvedAt = new Date().toISOString();
-
-  emitAudit('Approval', approval.id, newStatus, operatorId,
-    before as unknown as Record<string, unknown>,
-    { status: newStatus, operatorId, notes });
-
-  // Side-effect: advance lot status on PROCUREMENT approval
-  if (newStatus === 'APPROVED' && approval.approvalType === 'PROCUREMENT') {
-    const lot = appStore.lots.find((l) => l.id === approval.entityId);
-    if (lot && (lot.status === 'SCORED' || lot.status === 'PENDING_PROCUREMENT' || lot.status === 'AVAILABLE')) {
-      const lotBefore = { status: lot.status };
-      lot.status = 'PROCUREMENT_CONFIRMED';
-      emitAudit('SurplusLot', lot.id, 'STATUS_CHANGE', 'system', lotBefore, { status: 'PROCUREMENT_CONFIRMED' });
-    }
-  }
-
-  return json({ approval });
+  return json(updated);
 };

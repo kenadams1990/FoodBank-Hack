@@ -1,13 +1,17 @@
 // GET /api/recommendations/:lotId — full agent recommendation bundle
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { appStore } from '$lib/store';
-import { runPipeline } from '../../../../../agents/pipeline';
+import { db } from '$lib/store';
+import { runPipeline } from '../../../../../../../../apps/agents/pipeline';
 
 export const GET: RequestHandler = ({ params }) => {
-  const lot = appStore.lots.find((l) => l.id === params.lotId);
-  if (!lot) return json({ error: 'Lot not found' }, { status: 404 });
+  const lot = db.lots.findById(params.lotId);
+  if (!lot) throw error(404, `Lot ${params.lotId} not found`);
 
-  const bundle = runPipeline(lot);
-  return json(bundle);
+  const quotes = db.quotes.findByLotId(lot.id);
+  const facilities = db.facilities.findAll();
+  const foodBanks = db.foodBanks.findAll();
+
+  const result = runPipeline(lot, quotes, facilities, foodBanks);
+  return json(result);
 };

@@ -1,33 +1,26 @@
-// POST /api/approvals — create an approval request
-import { json } from '@sveltejs/kit';
+// POST /api/approvals — create approval request
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { appStore, emitAudit } from '$lib/store';
+import { db } from '$lib/store';
 import { CreateApprovalSchema } from '$lib/validation';
 
 export const GET: RequestHandler = () => {
-  return json({ approvals: appStore.approvals });
+  return json({ approvals: db.approvals.findAll() });
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
   const parsed = CreateApprovalSchema.safeParse(body);
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) throw error(400, parsed.error.message);
 
-  const { approvalType, entityId, entityType, draftPayload } = parsed.data;
-  const approval = {
-    id: `apr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    approvalType,
-    status: 'PENDING' as const,
-    entityId,
-    entityType,
-    operatorId: null,
-    draftPayload,
-    notes: null,
-    createdAt: new Date().toISOString(),
-    resolvedAt: null,
-  };
-  appStore.approvals.push(approval);
-  emitAudit('Approval', approval.id, 'CREATED', 'system', null, { status: 'PENDING', approvalType, entityId });
+  const approval = db.approvals.create({
+    approvalType: parsed.data.approvalType,
+    entityId: parsed.data.entityId,
+    draftPayload: parsed.data.draftPayload,
+    operatorId: parsed.data.operatorId ?? '',
+    status: 'PENDING',
+    notes: parsed.data.notes,
+  });
 
-  return json({ approval }, { status: 201 });
+  return json(approval, { status: 201 });
 };

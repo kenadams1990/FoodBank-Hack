@@ -1,19 +1,16 @@
-// POST /api/lots/:id/score — trigger opportunity scoring for a lot
-import { json } from '@sveltejs/kit';
+// POST /api/lots/:id/score — trigger opportunity scoring
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { appStore, emitAudit } from '$lib/store';
-import { scoreLot } from '../../../../../../agents/scorer';
+import { db } from '$lib/store';
+import { scoreLot } from '../../../../../../../../../apps/agents/scorer';
+import { CANNING_FACILITIES, FOOD_BANKS } from '../../../../../../../../../packages/shared/src/mockData';
 
 export const POST: RequestHandler = ({ params }) => {
-  const lot = appStore.lots.find((l) => l.id === params.id);
-  if (!lot) return json({ error: 'Lot not found' }, { status: 404 });
+  const lot = db.lots.findById(params.id);
+  if (!lot) throw error(404, `Lot ${params.id} not found`);
 
-  const score = scoreLot(lot, appStore.foodBanks, appStore.facilities);
-  const before = { score: lot.score, status: lot.status };
-  lot.score = score.score;
-  if (lot.status === 'AVAILABLE') lot.status = 'SCORED';
+  const breakdown = scoreLot(lot, CANNING_FACILITIES, FOOD_BANKS);
+  db.lots.update(lot.id, { score: breakdown.total, status: 'SCORED' });
 
-  emitAudit('SurplusLot', lot.id, 'SCORED', 'system', before, { score: score.score, status: lot.status });
-
-  return json({ lot, score });
+  return json({ lotId: lot.id, score: breakdown });
 };
