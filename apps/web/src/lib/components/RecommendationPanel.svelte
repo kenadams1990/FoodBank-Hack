@@ -1,136 +1,155 @@
 <script lang="ts">
-  import type { RecommendationBundle } from '../../../../../packages/shared/src/types';
-
+  import type { RecommendationBundle } from '../../../../../../packages/shared/src/types';
   export let bundle: RecommendationBundle;
-  export let onApprove: (approvalId: string, type: string) => Promise<void>;
-  export let onReject: (approvalId: string, type: string) => Promise<void>;
-  export let procurementApprovalId: string;
-  export let facilityApprovalId: string;
-  export let deliveryApprovalId: string;
 
-  let procStatus: 'idle' | 'loading' | 'done' = 'idle';
-  let facStatus: 'idle' | 'loading' | 'done' = 'idle';
-  let delStatus: 'idle' | 'loading' | 'done' = 'idle';
-  let rejectNotes = '';
+  let approvalStatus: Record<string, 'idle' | 'approved' | 'rejected' | 'loading'> = {
+    procurement: 'idle',
+    facility: 'idle',
+    delivery: 'idle',
+  };
 
-  async function handle(action: 'approve' | 'reject', id: string, type: string, setStatus: (s: 'idle' | 'loading' | 'done') => void) {
-    setStatus('loading');
-    if (action === 'approve') await onApprove(id, type);
-    else await onReject(id, type);
-    setStatus('done');
+  async function act(type: 'procurement' | 'facility' | 'delivery', action: 'APPROVE' | 'REJECT') {
+    approvalStatus[type] = 'loading';
+    // Find pending approval of matching type
+    const typeMap = {
+      procurement: 'PROCUREMENT',
+      facility: 'FACILITY_BOOKING',
+      delivery: 'DELIVERY_RELEASE',
+    } as const;
+    try {
+      const listRes = await fetch('/api/approvals');
+      const { approvals } = await listRes.json();
+      const pending = approvals.find(
+        (a: any) => a.approvalType === typeMap[type] &&
+          a.entityId === bundle.lot.id &&
+          a.status === 'PENDING'
+      );
+      if (!pending) { approvalStatus[type] = 'idle'; return; }
+
+      await fetch(`/api/approvals/${pending.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, operatorId: 'operator-ken' }),
+      });
+      approvalStatus[type] = action === 'APPROVE' ? 'approved' : 'rejected';
+    } catch {
+      approvalStatus[type] = 'idle';
+    }
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-5">
   <!-- Procurement Draft -->
   <section class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold text-gray-800">Procurement Recommendation</h3>
-      <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">Agent Draft</span>
+    <div class="flex items-start justify-between">
+      <div>
+        <h3 class="font-semibold text-gray-800">Procurement Recommendation</h3>
+        <p class="text-xs text-gray-400 mt-0.5">Agent recommends. You decide.</p>
+      </div>
+      {#if approvalStatus.procurement === 'approved'}
+        <span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-full">✓ Approved</span>
+      {:else if approvalStatus.procurement === 'rejected'}
+        <span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full">✕ Rejected</span>
+      {/if}
     </div>
-    <div class="text-sm text-gray-600 space-y-1 mb-4">
-      <div><span class="font-medium">Counter price:</span> ${bundle.procurementDraft.counterPricePerLb}/lb</div>
-      <div><span class="font-medium">Suggested MOQ:</span> {bundle.procurementDraft.suggestedMOQLbs.toLocaleString()} lbs</div>
-      <div><span class="font-medium">Estimated total:</span> ${bundle.procurementDraft.estimatedTotalCost.toLocaleString()}</div>
-      <div><span class="font-medium">Savings vs. market:</span> <span class="text-green-600">${bundle.procurementDraft.savingsVsMarket.toLocaleString()}</span></div>
-      <p class="text-gray-500 italic mt-2 text-xs">{bundle.procurementDraft.justification}</p>
-    </div>
-    {#if procStatus === 'done'}
-      <p class="text-sm text-green-600 font-medium">✓ Decision recorded</p>
-    {:else}
-      <div class="flex gap-2">
-        <button
-          class="px-4 py-1.5 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50"
-          disabled={procStatus === 'loading'}
-          on:click={() => handle('approve', procurementApprovalId, 'PROCUREMENT', s => procStatus = s)}
-        >{procStatus === 'loading' ? 'Approving...' : 'Approve Procurement'}</button>
-        <button
-          class="px-4 py-1.5 bg-white border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50 disabled:opacity-50"
-          disabled={procStatus === 'loading'}
-          on:click={() => handle('reject', procurementApprovalId, 'PROCUREMENT', s => procStatus = s)}
-        >Reject</button>
+    <dl class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 text-sm">
+      <div><dt class="text-gray-400">Counter-offer</dt><dd class="font-semibold">${bundle.procurementDraft.counterOfferPricePerLb}/lb</dd></div>
+      <div><dt class="text-gray-400">Min Order</dt><dd class="font-semibold">{bundle.procurementDraft.suggestedMoqLbs.toLocaleString()} lbs</dd></div>
+      <div><dt class="text-gray-400">Offer Valid</dt><dd class="font-semibold">{bundle.procurementDraft.offerValidHrs}h</dd></div>
+    </dl>
+    <p class="text-xs text-gray-500 mt-3 italic">{bundle.procurementDraft.justification}</p>
+    {#if approvalStatus.procurement === 'idle'}
+      <div class="flex gap-2 mt-4">
+        <button on:click={() => act('procurement', 'APPROVE')}
+          class="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-700">
+          ✓ Approve Procurement
+        </button>
+        <button on:click={() => act('procurement', 'REJECT')}
+          class="flex-1 bg-red-50 text-red-700 text-sm font-medium py-2 rounded-lg hover:bg-red-100 border border-red-200">
+          ✕ Reject
+        </button>
       </div>
     {/if}
   </section>
 
   <!-- Facility Matches -->
   <section class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-start justify-between">
       <h3 class="font-semibold text-gray-800">Canning Facility Match</h3>
-      <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">Agent Draft</span>
+      {#if approvalStatus.facility === 'approved'}
+        <span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-full">✓ Booked</span>
+      {:else if approvalStatus.facility === 'rejected'}
+        <span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full">✕ Rejected</span>
+      {/if}
     </div>
-    {#each bundle.facilityMatches.slice(0, 3) as match, i}
-      <div class="text-sm text-gray-600 border rounded-lg p-3 mb-2" class:border-teal-300={i === 0} class:bg-teal-50={i === 0}>
-        <div class="flex items-center justify-between">
-          <span class="font-medium">{match.facility.name}</span>
-          <span class="text-xs font-semibold text-teal-700">Score {match.matchScore}/100</span>
+    <div class="space-y-3 mt-4">
+      {#each bundle.facilityMatches.slice(0, 3) as match, i}
+        <div class="border border-gray-100 rounded-lg p-3 {i === 0 ? 'ring-1 ring-brand-dark/20' : ''}">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold">{match.facility.name}</p>
+              <p class="text-xs text-gray-400">{match.facility.location}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-bold text-brand-dark">{match.matchScore}/100</p>
+              <p class="text-xs text-gray-400">{match.estimatedDays}d • {match.estimatedCases} cases</p>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">{match.rationale}</p>
         </div>
-        <p class="text-xs text-gray-500 mt-1">{match.matchReason}</p>
-        <div class="flex gap-4 mt-1 text-xs text-gray-500">
-          <span>~{match.estimatedCans.toLocaleString()} cans</span>
-          <span>{match.estimatedDays}d run</span>
-          <span>${match.totalCanningCost.toLocaleString()} total</span>
-          <span>Slot: {match.slot.date}</span>
-        </div>
-      </div>
-    {/each}
-    {#if facStatus === 'done'}
-      <p class="text-sm text-green-600 font-medium mt-2">✓ Decision recorded</p>
-    {:else}
-      <div class="flex gap-2 mt-3">
-        <button
-          class="px-4 py-1.5 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50"
-          disabled={facStatus === 'loading'}
-          on:click={() => handle('approve', facilityApprovalId, 'FACILITY_BOOKING', s => facStatus = s)}
-        >{facStatus === 'loading' ? 'Booking...' : 'Book Top Facility'}</button>
-        <button
-          class="px-4 py-1.5 bg-white border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50"
-          disabled={facStatus === 'loading'}
-          on:click={() => handle('reject', facilityApprovalId, 'FACILITY_BOOKING', s => facStatus = s)}
-        >Reject</button>
+      {/each}
+    </div>
+    {#if approvalStatus.facility === 'idle'}
+      <div class="flex gap-2 mt-4">
+        <button on:click={() => act('facility', 'APPROVE')}
+          class="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-700">
+          ✓ Book Top Facility
+        </button>
+        <button on:click={() => act('facility', 'REJECT')}
+          class="flex-1 bg-red-50 text-red-700 text-sm font-medium py-2 rounded-lg hover:bg-red-100 border border-red-200">
+          ✕ Reject
+        </button>
       </div>
     {/if}
   </section>
 
   <!-- Delivery Plan -->
   <section class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-start justify-between">
       <h3 class="font-semibold text-gray-800">Delivery Plan</h3>
-      <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">Agent Draft</span>
+      {#if approvalStatus.delivery === 'approved'}
+        <span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-full">✓ Released</span>
+      {:else if approvalStatus.delivery === 'rejected'}
+        <span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full">✕ Rejected</span>
+      {/if}
     </div>
-    <div class="space-y-2 mb-4">
-      {#each bundle.shipmentDrafts as draft}
-        <div class="text-sm border rounded-lg p-3">
-          <div class="flex justify-between">
-            <span class="font-medium">{draft.foodBank.name}</span>
-            <span class="text-teal-600 font-semibold">{draft.cansAllocated.toLocaleString()} cans</span>
-          </div>
-          <p class="text-xs text-gray-500 mt-1">{draft.priorityReason}</p>
-          <p class="text-xs text-gray-400">{draft.deliveryWindow} — {draft.routeNotes}</p>
-        </div>
-      {/each}
-    </div>
-    {#if delStatus === 'done'}
-      <p class="text-sm text-green-600 font-medium">✓ Decision recorded</p>
-    {:else}
-      <div class="flex gap-2">
-        <button
-          class="px-4 py-1.5 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50"
-          disabled={delStatus === 'loading'}
-          on:click={() => handle('approve', deliveryApprovalId, 'DELIVERY_RELEASE', s => delStatus = s)}
-        >{delStatus === 'loading' ? 'Releasing...' : 'Release Delivery'}</button>
-        <button
-          class="px-4 py-1.5 bg-white border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50"
-          disabled={delStatus === 'loading'}
-          on:click={() => handle('reject', deliveryApprovalId, 'DELIVERY_RELEASE', s => delStatus = s)}
-        >Reject</button>
+    <table class="w-full text-xs mt-4">
+      <thead><tr class="text-gray-400 border-b">
+        <th class="text-left pb-2">Food Bank</th>
+        <th class="text-right pb-2">Cases</th>
+        <th class="text-right pb-2">Window</th>
+      </tr></thead>
+      <tbody>
+        {#each bundle.shipmentDrafts as draft}
+          <tr class="border-b border-gray-50">
+            <td class="py-2 font-medium">{draft.foodBankName}</td>
+            <td class="text-right py-2">{draft.estimatedCases}</td>
+            <td class="text-right py-2 text-gray-400">{draft.deliveryWindow}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+    {#if approvalStatus.delivery === 'idle'}
+      <div class="flex gap-2 mt-4">
+        <button on:click={() => act('delivery', 'APPROVE')}
+          class="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-700">
+          ✓ Release Delivery
+        </button>
+        <button on:click={() => act('delivery', 'REJECT')}
+          class="flex-1 bg-red-50 text-red-700 text-sm font-medium py-2 rounded-lg hover:bg-red-100 border border-red-200">
+          ✕ Reject
+        </button>
       </div>
     {/if}
-  </section>
-
-  <!-- Agent Brief -->
-  <section class="bg-gray-50 rounded-xl border border-gray-200 p-5">
-    <h3 class="font-semibold text-gray-700 mb-2 text-sm">Agent Brief</h3>
-    <pre class="text-xs text-gray-600 whitespace-pre-wrap font-mono">{bundle.agentBrief}</pre>
   </section>
 </div>

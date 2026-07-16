@@ -1,69 +1,76 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { SurplusLot } from '../../../../../packages/shared/src/types';
 
-  const COLUMNS: { key: string; label: string; color: string }[] = [
-    { key: 'PENDING_PROCUREMENT', label: 'Pending Approval', color: 'border-t-orange-400' },
-    { key: 'PROCUREMENT_CONFIRMED', label: 'Procurement Confirmed', color: 'border-t-teal-400' },
-    { key: 'IN_PRODUCTION', label: 'In Production', color: 'border-t-purple-400' },
-    { key: 'SHIPPED', label: 'Shipped', color: 'border-t-indigo-400' },
-    { key: 'DELIVERED', label: 'Delivered', color: 'border-t-green-400' },
+  const COLUMNS = [
+    { key: 'PENDING_PROCUREMENT', label: 'Pending Approval', color: 'border-orange-300' },
+    { key: 'PROCUREMENT_CONFIRMED', label: 'Procurement Confirmed', color: 'border-green-300' },
+    { key: 'IN_PRODUCTION', label: 'In Production', color: 'border-purple-300' },
+    { key: 'SHIPPED', label: 'Shipped', color: 'border-indigo-300' },
+    { key: 'DELIVERED', label: 'Delivered', color: 'border-gray-300' },
   ];
 
-  let lots: SurplusLot[] = [];
+  let shipments: any[] = [];
+  let lots: any[] = [];
   let loading = true;
 
   onMount(async () => {
-    const res = await fetch('/api/lots');
-    const data = await res.json();
-    lots = data.lots ?? [];
+    const [shipRes, lotRes] = await Promise.all([
+      fetch('/api/shipments').then(r => r.json()),
+      fetch('/api/lots').then(r => r.json()),
+    ]);
+    shipments = shipRes.shipments ?? [];
+    lots = lotRes.lots ?? [];
     loading = false;
   });
 
-  function lotsForStatus(status: string): SurplusLot[] {
-    return lots.filter(l => l.status === status);
+  function getLotsForStatus(status: string) {
+    return lots.filter((l: any) => l.status === status);
   }
 
-  function daysUntil(dateStr: string): number {
-    return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
+  function getShipmentForLot(lotId: string) {
+    return shipments.find((s: any) => s.lotId === lotId);
   }
 </script>
 
 <svelte:head><title>Logistics Board | TideLift</title></svelte:head>
 
 <div class="mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">Logistics Board</h1>
-  <p class="text-gray-500 text-sm mt-1">Track every lot from pending approval through delivered.</p>
+  <h1 class="text-2xl font-bold text-brand-dark">Logistics Board</h1>
+  <p class="text-gray-500 text-sm mt-1">All active lots by pipeline stage.</p>
 </div>
 
 {#if loading}
-  <div class="text-center py-20 text-gray-400">Loading…</div>
+  <div class="flex items-center justify-center h-64">
+    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-dark"></div>
+  </div>
 {:else}
-  <div class="grid grid-cols-5 gap-4 overflow-x-auto">
+  <div class="grid grid-cols-5 gap-3 min-w-[900px] overflow-x-auto pb-4">
     {#each COLUMNS as col}
-      <div class="min-w-0">
-        <div class="bg-white rounded-xl border border-t-4 {col.color} border-gray-200 p-3">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-xs font-semibold text-gray-600 uppercase tracking-wide">{col.label}</h2>
-            <span class="text-xs bg-gray-100 text-gray-500 rounded-full px-2">{lotsForStatus(col.key).length}</span>
-          </div>
-          <div class="space-y-2">
-            {#each lotsForStatus(col.key) as lot}
-              <a href="/lots/{lot.id}" class="block bg-gray-50 rounded-lg p-3 hover:bg-teal-50 transition-colors border border-gray-100">
-                <div class="font-medium text-sm text-gray-800">{lot.species}</div>
-                <div class="text-xs text-gray-500">{lot.weightLbs.toLocaleString()} lbs</div>
-                <div class="text-xs mt-1" class:text-red-500={daysUntil(lot.expiryDate) <= 3} class:text-gray-400={daysUntil(lot.expiryDate) > 3}>
-                  Expires {lot.expiryDate}
+      <div class="bg-gray-50 rounded-xl border-t-4 {col.color} p-3">
+        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{col.label}</h3>
+        <div class="space-y-2">
+          {#each getLotsForStatus(col.key) as lot}
+            {@const shp = getShipmentForLot(lot.id)}
+            <a href="/lots/{lot.id}"
+              class="block bg-white rounded-lg border border-gray-200 p-3 hover:border-brand-dark transition-colors">
+              <p class="text-sm font-semibold capitalize">{lot.species}</p>
+              <p class="text-xs text-gray-400 mt-0.5">{lot.lbs.toLocaleString()} lbs • {lot.location.split(',')[0]}</p>
+              {#if lot.score != null}
+                <div class="flex items-center gap-1 mt-2">
+                  <div class="flex-1 bg-gray-200 rounded-full h-1">
+                    <div class="bg-brand-dark h-1 rounded-full" style="width:{lot.score}%"></div>
+                  </div>
+                  <span class="text-xs font-mono text-gray-500">{lot.score}</span>
                 </div>
-                {#if lot.score !== undefined}
-                  <div class="mt-1 text-xs font-semibold text-teal-600">Score {lot.score}</div>
-                {/if}
-              </a>
-            {/each}
-            {#if lotsForStatus(col.key).length === 0}
-              <div class="text-xs text-gray-300 text-center py-4">Empty</div>
-            {/if}
-          </div>
+              {/if}
+              {#if shp}
+                <p class="text-xs text-gray-400 mt-1">→ {shp.foodBank?.name ?? shp.foodBankId}</p>
+              {/if}
+            </a>
+          {/each}
+          {#if getLotsForStatus(col.key).length === 0}
+            <p class="text-xs text-gray-300 text-center py-4">Empty</p>
+          {/if}
         </div>
       </div>
     {/each}
