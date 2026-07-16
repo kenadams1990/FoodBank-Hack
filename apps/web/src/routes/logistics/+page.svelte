@@ -1,76 +1,61 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import ExceptionAlerts from '$lib/components/ExceptionAlerts.svelte';
+  import type { SurplusLot } from '../../../../packages/shared/src/types';
 
-  const COLUMNS = [
-    { key: 'PENDING_PROCUREMENT', label: 'Pending Approval', color: 'border-orange-300' },
-    { key: 'PROCUREMENT_CONFIRMED', label: 'Procurement Confirmed', color: 'border-green-300' },
-    { key: 'IN_PRODUCTION', label: 'In Production', color: 'border-purple-300' },
-    { key: 'SHIPPED', label: 'Shipped', color: 'border-indigo-300' },
-    { key: 'DELIVERED', label: 'Delivered', color: 'border-gray-300' },
-  ];
-
-  let shipments: any[] = [];
-  let lots: any[] = [];
+  let kanban: Record<string, SurplusLot[]> = {};
+  let allLots: SurplusLot[] = [];
   let loading = true;
 
+  const columns = [
+    { key: 'PENDING_APPROVAL', label: 'Pending Approval', color: 'border-t-blue-400' },
+    { key: 'PROCUREMENT_CONFIRMED', label: 'Procurement Confirmed', color: 'border-t-green-400' },
+    { key: 'IN_PRODUCTION', label: 'In Production', color: 'border-t-purple-400' },
+    { key: 'SHIPPED', label: 'Shipped', color: 'border-t-indigo-400' },
+    { key: 'DELIVERED', label: 'Delivered', color: 'border-t-gray-400' },
+  ];
+
   onMount(async () => {
-    const [shipRes, lotRes] = await Promise.all([
-      fetch('/api/shipments').then(r => r.json()),
-      fetch('/api/lots').then(r => r.json()),
-    ]);
-    shipments = shipRes.shipments ?? [];
-    lots = lotRes.lots ?? [];
-    loading = false;
+    try {
+      const res = await fetch('/api/shipments');
+      const data = await res.json();
+      kanban = data.kanban;
+      allLots = Object.values(data.kanban).flat() as SurplusLot[];
+    } finally {
+      loading = false;
+    }
   });
-
-  function getLotsForStatus(status: string) {
-    return lots.filter((l: any) => l.status === status);
-  }
-
-  function getShipmentForLot(lotId: string) {
-    return shipments.find((s: any) => s.lotId === lotId);
-  }
 </script>
 
-<svelte:head><title>Logistics Board | TideLift</title></svelte:head>
+<svelte:head><title>Logistics Board — TideLift</title></svelte:head>
 
 <div class="mb-6">
   <h1 class="text-2xl font-bold text-brand-dark">Logistics Board</h1>
-  <p class="text-gray-500 text-sm mt-1">All active lots by pipeline stage.</p>
+  <p class="text-gray-500 text-sm mt-1">Track every lot from surplus to delivery.</p>
 </div>
 
+<ExceptionAlerts lots={allLots} />
+
 {#if loading}
-  <div class="flex items-center justify-center h-64">
-    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-dark"></div>
-  </div>
+  <p class="text-gray-400 animate-pulse">Loading board…</p>
 {:else}
-  <div class="grid grid-cols-5 gap-3 min-w-[900px] overflow-x-auto pb-4">
-    {#each COLUMNS as col}
-      <div class="bg-gray-50 rounded-xl border-t-4 {col.color} p-3">
-        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{col.label}</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    {#each columns as col}
+      <div class="bg-white rounded-xl border border-gray-100 border-t-4 {col.color} p-4 min-h-48">
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          {col.label}
+          <span class="ml-1 bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{(kanban[col.key] ?? []).length}</span>
+        </h3>
         <div class="space-y-2">
-          {#each getLotsForStatus(col.key) as lot}
-            {@const shp = getShipmentForLot(lot.id)}
-            <a href="/lots/{lot.id}"
-              class="block bg-white rounded-lg border border-gray-200 p-3 hover:border-brand-dark transition-colors">
-              <p class="text-sm font-semibold capitalize">{lot.species}</p>
-              <p class="text-xs text-gray-400 mt-0.5">{lot.lbs.toLocaleString()} lbs • {lot.location.split(',')[0]}</p>
-              {#if lot.score != null}
-                <div class="flex items-center gap-1 mt-2">
-                  <div class="flex-1 bg-gray-200 rounded-full h-1">
-                    <div class="bg-brand-dark h-1 rounded-full" style="width:{lot.score}%"></div>
-                  </div>
-                  <span class="text-xs font-mono text-gray-500">{lot.score}</span>
-                </div>
-              {/if}
-              {#if shp}
-                <p class="text-xs text-gray-400 mt-1">→ {shp.foodBank?.name ?? shp.foodBankId}</p>
+          {#each (kanban[col.key] ?? []) as lot}
+            <a href="/lots/{lot.id}" class="block bg-gray-50 hover:bg-teal-50 rounded-lg p-3 transition">
+              <p class="text-sm font-semibold capitalize text-brand-dark">{lot.species}</p>
+              <p class="text-xs text-gray-400">{lot.lbs.toLocaleString()} lbs · {lot.landingLocation}</p>
+              {#if lot.score !== undefined}
+                <p class="text-xs text-teal-600 font-medium mt-1">Score: {lot.score}</p>
               {/if}
             </a>
           {/each}
-          {#if getLotsForStatus(col.key).length === 0}
-            <p class="text-xs text-gray-300 text-center py-4">Empty</p>
-          {/if}
         </div>
       </div>
     {/each}

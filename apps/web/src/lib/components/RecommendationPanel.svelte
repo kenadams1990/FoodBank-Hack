@@ -1,155 +1,85 @@
 <script lang="ts">
-  import type { RecommendationBundle } from '../../../../../../packages/shared/src/types';
-  export let bundle: RecommendationBundle;
+  export let recommendation: Record<string, unknown>;
+  export let lotId: string;
 
-  let approvalStatus: Record<string, 'idle' | 'approved' | 'rejected' | 'loading'> = {
-    procurement: 'idle',
-    facility: 'idle',
-    delivery: 'idle',
-  };
+  let approving: Record<string, boolean> = {};
+  let done: Record<string, 'approved' | 'rejected'> = {};
+  let notes: Record<string, string> = {};
 
-  async function act(type: 'procurement' | 'facility' | 'delivery', action: 'APPROVE' | 'REJECT') {
-    approvalStatus[type] = 'loading';
-    // Find pending approval of matching type
-    const typeMap = {
-      procurement: 'PROCUREMENT',
-      facility: 'FACILITY_BOOKING',
-      delivery: 'DELIVERY_RELEASE',
-    } as const;
+  const sections = [
+    { key: 'procurement', type: 'PROCUREMENT', label: 'Procurement Offer', icon: '💰' },
+    { key: 'canning',     type: 'FACILITY_BOOKING', label: 'Facility Booking', icon: '🏭' },
+    { key: 'delivery',   type: 'DELIVERY_RELEASE', label: 'Delivery Plan', icon: '🚚' },
+  ];
+
+  async function act(approvalId: string, sectionKey: string, status: 'APPROVED' | 'REJECTED') {
+    approving[sectionKey] = true;
     try {
-      const listRes = await fetch('/api/approvals');
-      const { approvals } = await listRes.json();
-      const pending = approvals.find(
-        (a: any) => a.approvalType === typeMap[type] &&
-          a.entityId === bundle.lot.id &&
-          a.status === 'PENDING'
-      );
-      if (!pending) { approvalStatus[type] = 'idle'; return; }
-
-      await fetch(`/api/approvals/${pending.id}`, {
+      await fetch(`/api/approvals/${approvalId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, operatorId: 'operator-ken' }),
+        body: JSON.stringify({ status, operatorId: 'operator:ken', notes: notes[sectionKey] }),
       });
-      approvalStatus[type] = action === 'APPROVE' ? 'approved' : 'rejected';
-    } catch {
-      approvalStatus[type] = 'idle';
+      done[sectionKey] = status === 'APPROVED' ? 'approved' : 'rejected';
+    } finally {
+      approving[sectionKey] = false;
     }
+  }
+
+  function approvalId(sectionKey: string): string {
+    const section = (recommendation as Record<string, Record<string, unknown>>)[sectionKey];
+    return (section?.approvalRequest as Record<string, string>)?.id ?? '';
+  }
+
+  function formatPayload(sectionKey: string): string {
+    const section = (recommendation as Record<string, Record<string, unknown>>)[sectionKey];
+    const draft = section?.draft ?? section?.topMatch ?? section?.drafts;
+    return JSON.stringify(draft, null, 2);
   }
 </script>
 
 <div class="space-y-5">
-  <!-- Procurement Draft -->
-  <section class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="flex items-start justify-between">
-      <div>
-        <h3 class="font-semibold text-gray-800">Procurement Recommendation</h3>
-        <p class="text-xs text-gray-400 mt-0.5">Agent recommends. You decide.</p>
-      </div>
-      {#if approvalStatus.procurement === 'approved'}
-        <span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-full">✓ Approved</span>
-      {:else if approvalStatus.procurement === 'rejected'}
-        <span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full">✕ Rejected</span>
-      {/if}
-    </div>
-    <dl class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 text-sm">
-      <div><dt class="text-gray-400">Counter-offer</dt><dd class="font-semibold">${bundle.procurementDraft.counterOfferPricePerLb}/lb</dd></div>
-      <div><dt class="text-gray-400">Min Order</dt><dd class="font-semibold">{bundle.procurementDraft.suggestedMoqLbs.toLocaleString()} lbs</dd></div>
-      <div><dt class="text-gray-400">Offer Valid</dt><dd class="font-semibold">{bundle.procurementDraft.offerValidHrs}h</dd></div>
-    </dl>
-    <p class="text-xs text-gray-500 mt-3 italic">{bundle.procurementDraft.justification}</p>
-    {#if approvalStatus.procurement === 'idle'}
-      <div class="flex gap-2 mt-4">
-        <button on:click={() => act('procurement', 'APPROVE')}
-          class="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-700">
-          ✓ Approve Procurement
-        </button>
-        <button on:click={() => act('procurement', 'REJECT')}
-          class="flex-1 bg-red-50 text-red-700 text-sm font-medium py-2 rounded-lg hover:bg-red-100 border border-red-200">
-          ✕ Reject
-        </button>
-      </div>
-    {/if}
-  </section>
+  <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+    Agent Recommendations <span class="text-gray-400 font-normal normal-case">— Agent recommends. You decide.</span>
+  </h2>
 
-  <!-- Facility Matches -->
-  <section class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="flex items-start justify-between">
-      <h3 class="font-semibold text-gray-800">Canning Facility Match</h3>
-      {#if approvalStatus.facility === 'approved'}
-        <span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-full">✓ Booked</span>
-      {:else if approvalStatus.facility === 'rejected'}
-        <span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full">✕ Rejected</span>
-      {/if}
-    </div>
-    <div class="space-y-3 mt-4">
-      {#each bundle.facilityMatches.slice(0, 3) as match, i}
-        <div class="border border-gray-100 rounded-lg p-3 {i === 0 ? 'ring-1 ring-brand-dark/20' : ''}">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-semibold">{match.facility.name}</p>
-              <p class="text-xs text-gray-400">{match.facility.location}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-sm font-bold text-brand-dark">{match.matchScore}/100</p>
-              <p class="text-xs text-gray-400">{match.estimatedDays}d • {match.estimatedCases} cases</p>
-            </div>
-          </div>
-          <p class="text-xs text-gray-500 mt-2">{match.rationale}</p>
+  {#each sections as section}
+    {@const apvId = approvalId(section.key)}
+    {@const status = done[section.key]}
+
+    <div class="bg-white rounded-xl border border-gray-100 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-brand-dark">{section.icon} {section.label}</h3>
+        {#if status === 'approved'}
+          <span class="text-green-600 text-sm font-medium">✓ Approved</span>
+        {:else if status === 'rejected'}
+          <span class="text-red-500 text-sm font-medium">✕ Rejected</span>
+        {:else}
+          <span class="text-yellow-500 text-sm font-medium">● Pending your decision</span>
+        {/if}
+      </div>
+
+      <pre class="text-xs bg-gray-50 rounded-lg p-3 overflow-auto max-h-48 mb-4">{formatPayload(section.key)}</pre>
+
+      {#if !status}
+        <textarea
+          bind:value={notes[section.key]}
+          placeholder="Optional notes for audit log…"
+          class="w-full text-sm border border-gray-200 rounded-lg p-2 mb-3 resize-none h-16"
+        />
+        <div class="flex gap-3">
+          <button
+            on:click={() => act(apvId, section.key, 'APPROVED')}
+            disabled={approving[section.key]}
+            class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 rounded-lg text-sm disabled:opacity-50"
+          >Approve</button>
+          <button
+            on:click={() => act(apvId, section.key, 'REJECTED')}
+            disabled={approving[section.key]}
+            class="flex-1 border border-red-300 text-red-500 hover:bg-red-50 font-semibold py-2 rounded-lg text-sm disabled:opacity-50"
+          >Reject</button>
         </div>
-      {/each}
-    </div>
-    {#if approvalStatus.facility === 'idle'}
-      <div class="flex gap-2 mt-4">
-        <button on:click={() => act('facility', 'APPROVE')}
-          class="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-700">
-          ✓ Book Top Facility
-        </button>
-        <button on:click={() => act('facility', 'REJECT')}
-          class="flex-1 bg-red-50 text-red-700 text-sm font-medium py-2 rounded-lg hover:bg-red-100 border border-red-200">
-          ✕ Reject
-        </button>
-      </div>
-    {/if}
-  </section>
-
-  <!-- Delivery Plan -->
-  <section class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="flex items-start justify-between">
-      <h3 class="font-semibold text-gray-800">Delivery Plan</h3>
-      {#if approvalStatus.delivery === 'approved'}
-        <span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-full">✓ Released</span>
-      {:else if approvalStatus.delivery === 'rejected'}
-        <span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full">✕ Rejected</span>
       {/if}
     </div>
-    <table class="w-full text-xs mt-4">
-      <thead><tr class="text-gray-400 border-b">
-        <th class="text-left pb-2">Food Bank</th>
-        <th class="text-right pb-2">Cases</th>
-        <th class="text-right pb-2">Window</th>
-      </tr></thead>
-      <tbody>
-        {#each bundle.shipmentDrafts as draft}
-          <tr class="border-b border-gray-50">
-            <td class="py-2 font-medium">{draft.foodBankName}</td>
-            <td class="text-right py-2">{draft.estimatedCases}</td>
-            <td class="text-right py-2 text-gray-400">{draft.deliveryWindow}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-    {#if approvalStatus.delivery === 'idle'}
-      <div class="flex gap-2 mt-4">
-        <button on:click={() => act('delivery', 'APPROVE')}
-          class="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-700">
-          ✓ Release Delivery
-        </button>
-        <button on:click={() => act('delivery', 'REJECT')}
-          class="flex-1 bg-red-50 text-red-700 text-sm font-medium py-2 rounded-lg hover:bg-red-100 border border-red-200">
-          ✕ Reject
-        </button>
-      </div>
-    {/if}
-  </section>
+  {/each}
 </div>

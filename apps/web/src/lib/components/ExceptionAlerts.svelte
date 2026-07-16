@@ -1,33 +1,28 @@
 <script lang="ts">
-  import type { SurplusLot } from '../../../../../../packages/shared/src/types';
+  import type { SurplusLot } from '../../../../../packages/shared/src/types';
   export let lots: SurplusLot[] = [];
 
-  function daysUntil(dateStr: string): number {
-    return Math.round((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
-  }
-
-  $: expiringLots = lots.filter((l) => {
-    const days = daysUntil(l.expiryDate);
-    return days <= 2 && days >= 0 &&
-      !['PROCUREMENT_CONFIRMED', 'IN_PRODUCTION', 'SHIPPED', 'DELIVERED'].includes(l.status);
+  $: expiringIn48h = lots.filter(l => {
+    if (['DELIVERED', 'EXPIRED'].includes(l.status)) return false;
+    const ms = new Date(l.expiryDate).getTime() - Date.now();
+    return ms > 0 && ms < 48 * 3600 * 1000;
   });
+
+  $: noApprovedProcurement = expiringIn48h.filter(l =>
+    !['PROCUREMENT_CONFIRMED', 'IN_PRODUCTION', 'SHIPPED', 'DELIVERED'].includes(l.status)
+  );
 </script>
 
-{#if expiringLots.length > 0}
-  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
-    <div class="flex items-start gap-3">
-      <span class="text-amber-500 text-xl">⚠️</span>
-      <div>
-        <p class="text-sm font-semibold text-amber-900">Expiry Alert</p>
-        <ul class="mt-1 space-y-1">
-          {#each expiringLots as lot}
-            <li class="text-xs text-amber-700">
-              <a href="/lots/{lot.id}" class="font-semibold hover:underline capitalize">{lot.species}</a>
-              ({lot.lbs.toLocaleString()} lbs) expires in {daysUntil(lot.expiryDate)} day(s) — no procurement confirmed.
-            </li>
-          {/each}
-        </ul>
-      </div>
-    </div>
+{#if noApprovedProcurement.length > 0}
+  <div class="mb-4 rounded-xl bg-red-50 border border-red-200 p-4">
+    <p class="text-sm font-semibold text-red-700">⚠️ {noApprovedProcurement.length} lot(s) expiring within 48 hours with no approved procurement:</p>
+    <ul class="mt-2 space-y-1">
+      {#each noApprovedProcurement as lot}
+        <li class="text-sm text-red-600">
+          <a href="/lots/{lot.id}" class="underline capitalize">{lot.species}</a>
+          — {lot.lbs.toLocaleString()} lbs — expires {lot.expiryDate}
+        </li>
+      {/each}
+    </ul>
   </div>
 {/if}

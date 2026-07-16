@@ -1,85 +1,90 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import type { Supplier, FoodBank } from '../../../../packages/shared/src/types';
 
-  let suppliers: any[] = [];
-  let foodBanks: any[] = [];
+  let suppliers: Supplier[] = [];
+  let foodBanks: FoodBank[] = [];
   let query = '';
   let loading = true;
-  let tab: 'suppliers' | 'foodbanks' = 'suppliers';
 
   async function load() {
-    loading = true;
     const res = await fetch(`/api/partners${query ? `?q=${encodeURIComponent(query)}` : ''}`);
     const data = await res.json();
-    suppliers = data.suppliers ?? [];
-    foodBanks = data.foodBanks ?? [];
-    loading = false;
+    suppliers = data.suppliers;
+    foodBanks = data.foodBanks;
   }
 
-  onMount(load);
+  onMount(async () => { await load(); loading = false; });
+
+  let debounce: ReturnType<typeof setTimeout>;
+  $: { query; clearTimeout(debounce); debounce = setTimeout(load, 250); }
 </script>
 
-<svelte:head><title>Partner Directory | TideLift</title></svelte:head>
+<svelte:head><title>Partners — TideLift</title></svelte:head>
 
-<div class="mb-6">
-  <h1 class="text-2xl font-bold text-brand-dark">Partner Directory</h1>
-  <p class="text-gray-500 text-sm mt-1">Suppliers and food bank partners.</p>
-</div>
-
-<div class="flex gap-3 mb-5">
-  <input bind:value={query} on:input={load} placeholder="Search name or region…"
-    class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/30" />
-  <div class="flex gap-1">
-    <button class="px-3 py-2 text-sm rounded-lg {tab === 'suppliers' ? 'bg-brand-dark text-white' : 'bg-gray-100 text-gray-600'}" on:click={() => tab = 'suppliers'}>Suppliers ({suppliers.length})</button>
-    <button class="px-3 py-2 text-sm rounded-lg {tab === 'foodbanks' ? 'bg-brand-dark text-white' : 'bg-gray-100 text-gray-600'}" on:click={() => tab = 'foodbanks'}>Food Banks ({foodBanks.length})</button>
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-brand-dark">Partner Directory</h1>
+    <p class="text-gray-500 text-sm mt-1">Suppliers and food bank partners.</p>
   </div>
+  <input
+    bind:value={query}
+    placeholder="Search partners…"
+    class="border border-gray-200 rounded-lg px-4 py-2 text-sm w-64"
+  />
 </div>
 
-{#if tab === 'suppliers'}
-  <div class="overflow-x-auto">
+{#if loading}
+  <p class="text-gray-400 animate-pulse">Loading…</p>
+{:else}
+  <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Suppliers ({suppliers.length})</h2>
+  <div class="bg-white rounded-xl border border-gray-100 overflow-hidden mb-8">
     <table class="w-full text-sm">
-      <thead class="text-xs text-gray-400 border-b">
+      <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
         <tr>
-          <th class="text-left pb-2">Name</th>
-          <th class="text-left pb-2">Location</th>
-          <th class="text-left pb-2">Species</th>
-          <th class="text-left pb-2">Contact</th>
-          <th class="text-right pb-2">Avg lbs/mo</th>
+          {#each ['Name', 'Location', 'Contact', 'Species', 'Capacity / wk'] as h}
+            <th class="px-4 py-3 text-left">{h}</th>
+          {/each}
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-50">
         {#each suppliers as s}
-          <tr class="border-b border-gray-50 hover:bg-gray-50">
-            <td class="py-3 font-medium">{s.name}</td>
-            <td class="py-3 text-gray-500">{s.location}</td>
-            <td class="py-3">{s.species.join(', ')}</td>
-            <td class="py-3"><a href="mailto:{s.contactEmail}" class="text-brand-dark hover:underline text-xs">{s.contactEmail}</a></td>
-            <td class="py-3 text-right font-mono">{s.avgMonthlyLbs.toLocaleString()}</td>
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium text-brand-dark">{s.name}</td>
+            <td class="px-4 py-3 text-gray-500">{s.location}</td>
+            <td class="px-4 py-3">
+              <p>{s.contact}</p>
+              <a href="mailto:{s.email}" class="text-teal-600 text-xs">{s.email}</a>
+            </td>
+            <td class="px-4 py-3 text-gray-500 capitalize">{s.species.join(', ')}</td>
+            <td class="px-4 py-3 text-gray-500">{s.avgCapacityLbsPerWeek.toLocaleString()} lbs</td>
           </tr>
         {/each}
       </tbody>
     </table>
   </div>
-{:else}
-  <div class="overflow-x-auto">
+
+  <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Food Banks ({foodBanks.length})</h2>
+  <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
     <table class="w-full text-sm">
-      <thead class="text-xs text-gray-400 border-b">
+      <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
         <tr>
-          <th class="text-left pb-2">Name</th>
-          <th class="text-left pb-2">Region</th>
-          <th class="text-left pb-2">Contact</th>
-          <th class="text-right pb-2">Monthly Demand</th>
-          <th class="text-left pb-2">Dietary Notes</th>
+          {#each ['Name', 'Region', 'Contact', 'Monthly Demand', 'Access Windows'] as h}
+            <th class="px-4 py-3 text-left">{h}</th>
+          {/each}
         </tr>
       </thead>
-      <tbody>
-        {#each foodBanks as b}
-          <tr class="border-b border-gray-50 hover:bg-gray-50">
-            <td class="py-3 font-medium">{b.name}</td>
-            <td class="py-3 text-gray-500">{b.region}</td>
-            <td class="py-3"><a href="mailto:{b.contactEmail}" class="text-brand-dark hover:underline text-xs">{b.contactEmail}</a></td>
-            <td class="py-3 text-right font-mono">{b.monthlyDemandCases.toLocaleString()} cases</td>
-            <td class="py-3 text-xs text-gray-400">{b.dietaryRestrictions.join(', ') || '—'}</td>
+      <tbody class="divide-y divide-gray-50">
+        {#each foodBanks as fb}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium text-brand-dark">{fb.name}</td>
+            <td class="px-4 py-3 text-gray-500">{fb.region}</td>
+            <td class="px-4 py-3">
+              <p>{fb.contact}</p>
+              <a href="mailto:{fb.email}" class="text-teal-600 text-xs">{fb.email}</a>
+            </td>
+            <td class="px-4 py-3 text-gray-500">{fb.monthlyDemandCases.toLocaleString()} cases</td>
+            <td class="px-4 py-3 text-gray-400 text-xs">{fb.accessWindows.join(', ')}</td>
           </tr>
         {/each}
       </tbody>
