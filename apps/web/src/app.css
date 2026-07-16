@@ -2,7 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
 :root {
-  --brand: #0d5c63;
-  --accent: #ff6b35;
+  --ink:        #0B2027;
+  --brand:      #0E7C86;
+  --brand-deep: #094248;
+  --surface:    #F4F7F7;
+  --card:       #FFFFFF;
+  --line:       #DDE6E6;
+  --impact:     #F26A4B;
+  --warn:       #E8B23A;
+  --alert:      #D64545;
+  --ok:         #2E9E7B;
+}
+
+/* ─── Base typography ────────────────────────────────────────────────────── */
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ─── Utility classes ────────────────────────────────────────────────────── */
+
+/* Mono chip — for numeric readouts: lbs, °C, %, lot codes */
+.readout {
+  @apply font-mono text-xs tracking-tight bg-surface border border-line rounded px-1.5 py-0.5 text-ink;
+}
+
+/* Catch-ticket card wrapper */
+.catch-ticket {
+  @apply bg-white border border-line rounded-xl overflow-hidden
+         hover:border-brand transition-colors duration-200;
+  box-shadow: 0 1px 4px rgba(11,32,39,.06), 0 0 0 0 transparent;
+}
+.catch-ticket:hover {
+  box-shadow: 0 4px 16px rgba(14,124,134,.12);
+}
+
+/* Cold-chain flow strip */
+.flow-strip {
+  @apply flex items-center gap-0 font-mono text-xs;
+}
+.flow-strip__node {
+  @apply flex items-center gap-1 text-ink/50;
+}
+.flow-strip__node--active {
+  @apply text-brand font-medium;
+}
+.flow-strip__connector {
+  @apply mx-1.5 text-line;
+}
+
+/* Thermal status chips */
+.chip-ok   { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-ok/10 text-ok border border-ok/20; }
+.chip-warn { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-warn/10 text-warn border border-warn/20; }
+.chip-alert { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-alert/10 text-alert border border-alert/20; }
+.chip-neutral { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-surface text-ink/50 border border-line; }
+
+/* Impact number — coral, reserved solely for this purpose */
+.impact-number {
+  font-family: 'Archivo', sans-serif;
+  color: var(--impact);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+
+/* Reduced-motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
