@@ -1,11 +1,37 @@
 # 🌊 TideLift AI
 
 > **Surplus local fisheries → shelf-stable canned seafood for food banks.**  
-> A complete end-to-end AI agent platform that forecasts surplus, negotiates procurement discounts, owns the full canning logistics pipeline, and routes finished product to food banks — eliminating cold chain dependence from source to shelf.
+> A complete end-to-end AI agent platform that forecasts surplus, drafts procurement terms, owns the full canning logistics pipeline, and routes finished product to food banks — eliminating cold chain dependence from source to shelf.
+>
+> **Agent recommends. You decide.** Every agent output is a draft with a reason attached — quantity, price, route, partner. A human operator approves before anything executes, and every approval is logged to an audit trail.
 
 [![Hackathon](https://img.shields.io/badge/AISCO%20Hackathon-2026-blue?style=for-the-badge)](https://github.com/kenadams1990/FoodBank-Hack)
 [![Stack](https://img.shields.io/badge/Stack-SvelteKit%20%7C%20TypeScript%20%7C%20AI%20Agents-green?style=for-the-badge)](https://github.com/kenadams1990/FoodBank-Hack)
 [![Focus](https://img.shields.io/badge/Focus-Alameda%20County%20Food%20Bank-orange?style=for-the-badge)](https://github.com/kenadams1990/FoodBank-Hack)
+
+---
+
+## 🎯 Current Build Focus: Vessel → Pickup → Processing
+
+Per guidance from onsite industry advisors, the team is prioritizing **the segment between the fishing
+vessel and canning/processing intake** — the highest-signal, least-solved gap in the pipeline:
+
+1. **On-vessel catch logging** — computer vision at the point of harvest captures quantity, size, and
+   species *before* the pickup truck is dispatched, so the purchase/segregation decision is made with real
+   data instead of a phone call.
+2. **Cold-transport dispatch** — the recommended pickup, routed and time-boxed to the vessel's catch window.
+3. **Dockside CV sort** — species and size graded into barcoded, reusable, easy-clean bins, shellfish kept
+   separate from fin fish from the first touch.
+4. **Thermal-camera surface temperature profiling** at intake, flagging any bin that's drifted out of range.
+5. **Chem/microbiological QA flags** — before *and* after processing, not just at the loading dock.
+6. **Full cold-chain custody and traceability** — every bin's location, temperature, and handler logged from
+   vessel to processor.
+
+This sits upstream of the Forecast Agent below and is the active area of development — the intake agent and
+its dashboard page are being built today. The procurement/canning/routing agents described below remain part
+of the full vision and are already built out, but this segment is the current milestone. **Agent recommends.
+You decide** — every CV read, temperature flag, and QA hold is a recommendation an operator confirms, not an
+automatic action.
 
 ---
 
@@ -15,9 +41,9 @@
 
 Frozen dies. Canned travels.
 
-The missing piece isn't the fish — it's the **complete AI agent system** that handles everything end-to-end: finding and contacting fishery suppliers (who have no web presence or public contact info), negotiating procurement discounts autonomously, securing canning facility partnerships, managing the full repack pipeline, and routing shelf-stable protein to food banks that have no supplier relationships and no budget for a supply chain team.
+The missing piece isn't the fish — it's the **complete AI agent system** that handles everything end-to-end: finding and contacting fishery suppliers (who have no web presence or public contact info), drafting procurement terms, securing canning facility partnerships, managing the full repack pipeline, and routing shelf-stable protein to food banks that have no supplier relationships and no budget for a supply chain team. Agents draft every step. A human operator approves each one.
 
-That's TideLift. Not a dashboard. Not a tool. A **complete operational system**.
+That's TideLift. Not a dashboard. Not a tool. A **complete operational system** — with a person in the loop at every decision point.
 
 ---
 
@@ -27,21 +53,21 @@ Most food bank tech stops at inventory management. TideLift starts *before* the 
 
 The original insight was simple: **frozen seafood has perishability risk** — a single power outage or logistics delay destroys the product and the relationship. The solution was to eliminate the cold chain entirely by targeting the canning step. But that created a harder problem: **no one had the supplier contacts, the canning facility relationships, or the negotiation bandwidth** to make it work at scale.
 
-TideLift's agents solve all three — autonomously, continuously, and at a cost food banks can actually afford.
+TideLift's agents solve all three — drafting continuously, at a cost food banks can actually afford — but never acting alone. **Agent recommends. You decide.**
 
 ---
 
 ## How It Works
 
-TideLift is a **multi-agent Operations Intelligence Hub** built around 5 specialized AI agents that work in concert — from harvest forecast to food bank shelf.
+TideLift is a **multi-agent Operations Intelligence Hub** built around 5 specialized AI agents that work in concert — from harvest forecast to food bank shelf. Every arrow below is a *draft*, not an action: an operator approves each handoff before it executes.
 
 ```
 🎣 Fishery Surplus           🏭 Canning Partner           🏦 Food Bank Shelf
      │                              │                              │
      ▼                              ▼                              ▼
-┌──────────┐   negotiate   ┌──────────────┐   route & track  ┌──────────────┐
+┌──────────┐  draft terms  ┌──────────────┐  draft route     ┌──────────────┐
 │ FORECAST │──────────────▶│  PROCURE &   │─────────────────▶│   EQUITY     │
-│  AGENT   │               │  CAN AGENT   │                  │  ROUTER      │
+│  AGENT   │  (→ approve)  │  CAN AGENT   │   (→ approve)    │  ROUTER      │
 └──────────┘               └──────────────┘                  └──────────────┘
      │                                                               │
      └──────────────────── ANALYST AGENT ───────────────────────────┘
@@ -50,12 +76,15 @@ TideLift is a **multi-agent Operations Intelligence Hub** built around 5 special
 
 ### The 5 Agents
 
+Every agent below drafts a recommendation with a reason. Nothing executes until a human clicks approve —
+logged to the audit trail either way.
+
 | Agent | Role | Themes Covered |
 |-------|------|----------------|
 | 🔭 **Forecast Agent** | Reads harvest calendars + inbound history to predict surplus windows, price dips, and supply gaps 2+ weeks early | Theme 1 — See It Coming |
-| 🤝 **Procurement Agent** | Finds fishery supplier contacts, autonomously negotiates volume discounts, books canning facility slots, manages POs — no Rolodex required | Theme 3 — Production Is Manufacturing |
+| 🤝 **Procurement Agent** | Finds fishery supplier contacts, drafts volume-discount terms, books canning facility slots, prepares POs for approval — no Rolodex required | Theme 3 — Production Is Manufacturing |
 | 🏭 **Canning Ops Agent** | Treats repack as a factory line — forecasts kit needs, stages raw material, predicts volunteer turnout, sequences the floor | Theme 3 — Production Is Manufacturing |
-| 🚚 **Equity Router** | Routes finished cans on access windows + dietary need, not just miles; rebuilds routes in minutes when a truck goes down | Theme 4 — Equity With a Truck Attached |
+| 🚚 **Equity Router** | Drafts routes on access windows + dietary need, not just miles; re-proposes routes in minutes when a truck goes down | Theme 4 — Equity With a Truck Attached |
 | 📊 **Analyst Agent** | Answers plain-language questions from anyone on the team — no SQL, no tickets; briefs every lead at shift start | Theme 6 — Every Team Member an Analyst |
 
 ---
@@ -66,13 +95,13 @@ TideLift covers every step a human team would otherwise need to coordinate manua
 
 1. **Surplus detection** — Forecast Agent reads harvest calendars and flags upcoming windows
 2. **Supplier outreach** — Procurement Agent finds contacts for local fisheries (no public directory needed)
-3. **Discount negotiation** — Agents autonomously negotiate pricing and lock in volume commitments
-4. **Canning facility booking** — Procurement Agent identifies co-packing partners and books slots
+3. **Discount drafting** — Agent proposes pricing and volume terms; an operator approves before anything is committed
+4. **Canning facility booking** — Procurement Agent identifies co-packing partners and drafts booking requests
 5. **Canning ops management** — Canning Ops Agent manages the floor: staging, sequencing, volunteer scheduling
-6. **Finished goods routing** — Equity Router delivers to food banks by access window, dietary need, and urgency
+6. **Finished goods routing** — Equity Router proposes delivery by access window, dietary need, and urgency; operator confirms
 7. **Continuous reporting** — Analyst Agent keeps every stakeholder informed in plain language
 
-This is the pipeline that didn't exist. Food banks had no way to work with local fisheries at scale because the middle steps — contact finding, negotiation, canning logistics — required a full supply chain team. TideLift *is* that team.
+This is the pipeline that didn't exist. Food banks had no way to work with local fisheries at scale because the middle steps — contact finding, negotiation, canning logistics — required a full supply chain team. TideLift *is* that team, with every recommendation surfaced for a human to approve, never a black box acting on its own.
 
 ---
 
@@ -120,21 +149,21 @@ TideLift directly addresses **Alameda County Food Bank's 35-item Operations Inte
 | **Shelf Life** | ~3–6 months | 2–5 years |
 | **Distribution Reach** | Urban hubs only | Rural, remote, any pantry |
 | **Waste Risk** | High (power outages, transport) | Near zero |
-| **AI Negotiability** | Low — spot market | ✅ Contractable, forecastable |
-| **Supplier Discovery** | Manual outreach required | ✅ Agent-automated |
+| **AI Draftability** | Low — spot market | ✅ Contractable, forecastable |
+| **Supplier Discovery** | Manual outreach required | ✅ Agent-drafted, human-approved |
 
-Canning transforms a volatile, time-sensitive commodity into a **predictable, negotiable, distributable asset** — exactly what food bank supply chains need. And because agents handle supplier discovery and negotiation, food banks don't need existing fishery relationships to start.
+Canning transforms a volatile, time-sensitive commodity into a **predictable, distributable asset** — exactly what food bank supply chains need. And because agents draft supplier discovery and procurement terms for a human to approve, food banks don't need existing fishery relationships to start.
 
 ---
 
 ## Tech Stack
 
 ```
-Frontend:     SvelteKit (real-time dashboard, NL query interface)
-Agents:       Multi-agent orchestration — forecast, procure, can, route, analyze
-Backend:      TypeScript / Node.js
+Frontend:     SvelteKit (real-time dashboard, logistics kanban, audit trail)
+Agents:       TypeScript modules — forecast, score, draft-procure, match facility, route, analyze
+Backend:      TypeScript / Node.js, pnpm workspace, CI-tested (vitest)
 Data:         Harvest calendars, USDC fishery data, inbound history APIs
-AI:           LLM-powered negotiation, supplier discovery, and NL Q&A layer
+AI:           LLM-powered drafting, supplier discovery, and NL Q&A — human approves every output
 Infra:        Containerized, deployable on commodity cloud
 ```
 
@@ -143,14 +172,15 @@ Infra:        Containerized, deployable on commodity cloud
 ```
 /
 ├── apps/
-│   ├── web/          # SvelteKit dashboard — live ops view + NL Q&A
-│   └── agents/       # Multi-agent orchestration (forecast, procure, can, route)
+│   ├── web/          # SvelteKit dashboard — kanban, partners, audit trail, lot detail, approvals API
+│   └── agents/       # Agent modules: scorer, procure, canning, route, analyst + vitest tests
 ├── packages/
 │   └── shared/       # Types, schemas, shared utilities
 └── docs/
-    ├── pitch/        # Deck and one-pager
-    ├── architecture/ # Agent flow diagrams
-    └── demo/         # Demo script and recorded walkthrough
+    ├── PITCH.md            # Deck and one-pager
+    ├── ARCHITECTURE.md     # Agent flow diagrams
+    ├── DEMO_SCRIPT.md      # Demo script and walkthrough
+    └── ACCFB_NUMBERS.md    # Quantified ACCFB problem/solution figures
 ```
 
 ---
@@ -159,13 +189,13 @@ Infra:        Containerized, deployable on commodity cloud
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
-# Run development server
-npm run dev
+# Run the dashboard
+pnpm --filter web dev
 
-# Run agents locally
-npm run agents:dev
+# Run agent tests
+pnpm --filter agents test
 ```
 
 ---
@@ -175,7 +205,7 @@ npm run agents:dev
 - 🐟 **US fisheries discard millions of tons** of bycatch and surplus annually
 - 🥫 **Canned seafood is one of the most requested** but least donated food bank items
 - 📋 **No supplier directory exists** — food banks can't find fisheries, fisheries can't find food banks
-- 🤖 **No AI system currently exists** to automate the fishery → negotiation → canning → food bank pipeline end-to-end
+- 🤖 **No AI system currently exists** to draft the fishery → procurement → canning → food bank pipeline end-to-end for a human to approve
 - 💰 **$2,500 First Prize** — AISCO Hackathon 2026 (Judging: July 17, Capgemini)
 
 ---
@@ -187,9 +217,9 @@ npm run agents:dev
 | **Solves a real problem** | Directly from ACFB's 35-item build list + field research |
 | **AI agent-driven** | 5 specialized agents with defined roles and handoffs |
 | **Quantifiable impact** | Surplus fish → shelf-stable protein, cold chain eliminated, 2–5yr shelf life |
-| **Human in the loop** | Agents augment staff, never replace relationships or trust |
+| **Human in the loop** | **Agent recommends. You decide.** Every draft carries a reason; an operator approves before execution; every approval is logged to the audit trail |
 | **Built for Alameda County** | All 7 themes addressed, ACFB operations specifically modeled |
-| **Complete system** | Procurement negotiation + canning logistics + routing — not just a dashboard |
+| **Complete system** | Procurement drafting + canning logistics + routing — not just a dashboard |
 
 ---
 
