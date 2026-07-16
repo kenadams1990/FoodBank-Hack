@@ -1,66 +1,64 @@
 // scorer.ts — Deterministic Opportunity Scorer
-// Scores each surplus lot 0–100 across four weighted dimensions.
-// Agent recommends. You decide.
+// Returns a 0–100 score for each surplus lot. Agent recommends. You decide.
 
-import type { SurplusLot, FoodBank, CanningFacility, OpportunityScore } from '../../packages/shared/src/types';
+import type { SurplusLot, CanningFacility, FoodBank } from '../../packages/shared/src/types';
 
-const WEIGHTS = { price: 0.35, expiry: 0.30, volume: 0.20, demand: 0.15 };
+export type ScoreBreakdown = {
+  priceSavings: number;   // 0–30: discount vs. market
+  urgency: number;        // 0–25: days until expiry
+  lotSize: number;        // 0–25: lbs vs. minimum viable run
+  demandMatch: number;    // 0–20: food bank demand coverage
+  total: number;          // 0–100
+  rationale: string;
+};
 
-/** Returns days until expiry from today */
-function daysUntilExpiry(expiryDate: string): number {
-  return Math.max(0, Math.round((new Date(expiryDate).getTime() - Date.now()) / 86_400_000));
-}
-
-/**
- * Scores a surplus lot 0–100.
- * @param lot     The surplus lot to evaluate
- * @param banks   All food banks (used for demand matching)
- * @param facilities  All canning facilities (used for capacity matching)
- */
 export function scoreLot(
   lot: SurplusLot,
-  banks: FoodBank[],
-  facilities: CanningFacility[]
-): OpportunityScore {
-  // 1. Price score — how deep is the discount off market?
-  const discountPct = (lot.marketPricePerLb - lot.pricePerLb) / lot.marketPricePerLb;
-  const priceScore = Math.min(100, Math.round(discountPct * 250)); // 40% discount = 100
+  facilities: CanningFacility[],
+  foodBanks: FoodBank[],
+  today = new Date()
+): ScoreBreakdown {
+  // 1. Price savings (0–30)
+  const discountRatio = lot.proposedDiscountPct / 100;
+  const priceSavings = Math.round(Math.min(discountRatio / 0.40, 1) * 30);
 
-  // 2. Expiry score — urgency: <2 days = 100, >10 days = 0
-  const days = daysUntilExpiry(lot.expiryDate);
-  const expiryScore = days <= 0 ? 0 : Math.max(0, Math.round(100 - (days - 1) * 12));
+  // 2. Urgency — higher score the closer to expiry (0–25)
+  const msPerDay = 86_400_000;
+  const daysLeft = Math.max(0, (new Date(lot.expiryDate).getTime() - today.getTime()) / msPerDay);
+  const urgency = daysLeft <= 1 ? 25
+    : daysLeft <= 2 ? 22
+    : daysLeft <= 3 ? 18
+    : daysLeft <= 5 ? 12
+    : daysLeft <= 7 ? 6
+    : 2;
 
-  // 3. Volume score — lot size vs. average facility capacity
-  const avgCapLbs = facilities.length
-    ? facilities.reduce((s, f) => s + f.capacityCasesPerDay * 24 * 0.3, 0) / facilities.length
-    : 5000;
-  const volumeScore = Math.min(100, Math.round((lot.lbs / avgCapLbs) * 100));
+  // 3. Lot size vs. minimum viable canning run (0–25)
+  const MIN_VIABLE_LBS = 1000;
+  const IDEAL_LBS = 5000;
+  const lotSize = lot.lbs < MIN_VIABLE_LBS ? 0
+    : Math.round(Math.min(lot.lbs / IDEAL_LBS, 1) * 25);
 
-  // 4. Demand score — food banks that accept this species
-  const matchingBanks = banks.filter(
-    (b) => !b.dietaryRestrictions.some((r) => r === `no-${lot.species}`)
+  // 4. Demand match — is there a food bank that wants this species? (0–20)
+  const compatibleFacility = facilities.find(f =>
+    f.compatibleSpecies.includes(lot.species) &&
+    f.availableSlots.length > 0
   );
-  const totalDemand = matchingBanks.reduce((s, b) => s + b.monthlyDemandCases, 0);
-  const demandScore = Math.min(100, Math.round((totalDemand / 5000) * 100));
+  const estimatedCans = Math.floor(lot.lbs * 1.8);
+  const estimatedCases = Math.floor(estimatedCans / 24);
+  const totalDemand = foodBanks.reduce((s, fb) => s + fb.monthlyDemandCases, 0);
+  const demandMatch = !compatibleFacility ? 0
+    : Math.round(Math.min(estimatedCases / totalDemand, 1) * 20);
 
-  const score = Math.round(
-    priceScore * WEIGHTS.price +
-    expiryScore * WEIGHTS.expiry +
-    volumeScore * WEIGHTS.volume +
-    demandScore * WEIGHTS.demand
-  );
+  const total = priceSavings + urgency + lotSize + demandMatch;
 
-  const recommendation =
-    score >= 75
-      ? `Strong opportunity — act within ${days} day(s). Recommend procurement approval.`
-      : score >= 50
-      ? `Moderate opportunity. Verify facility availability before committing.`
-      : `Low score. Volume or economics may not justify a canning run.`;
+  const rationale = [
+    `${lot.proposedDiscountPct}% discount (${priceSavings}/30 pts).`,
+    `${daysLeft.toFixed(1)} days to expiry (${urgency}/25 pts).`,
+    `${lot.lbs.toLocaleString()} lbs lot size (${lotSize}/25 pts).`,
+    compatibleFacility
+      ? `Facility match: ${compatibleFacility.name} (${demandMatch}/20 pts).`
+      : `No compatible facility slot available (0/20 pts).`,
+  ].join(' ');
 
-  return {
-    lotId: lot.id,
-    score,
-    breakdown: { priceScore, expiryScore, volumeScore, demandScore },
-    recommendation,
-  };
+  return { priceSavings, urgency, lotSize, demandMatch, total, rationale };
 }

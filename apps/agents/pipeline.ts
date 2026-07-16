@@ -1,73 +1,77 @@
-// pipeline.ts — Agent Pipeline Orchestrator
-// Runs all agents in sequence for a given lot.
-// Each step produces a draft + approval request — nothing commits without human sign-off.
+// pipeline.ts — TideLift Agent Pipeline Orchestrator
+// Runs all agents in sequence. Each step produces a draft.
+// No state changes until a human approves via approvals.ts.
 
-import type { SurplusLot, RecommendationBundle } from '../../packages/shared/src/types';
-import { FOOD_BANKS, CANNING_FACILITIES, QUOTES } from '../../packages/shared/src/mockData';
-import { scoreLot } from './scorer';
-import { draftProcurement } from './procure';
-import { matchFacilities } from './canning';
-import { planDeliveries } from './route';
-import { generateBrief } from './analyst';
-import { createApprovalRequest } from './approvals';
+import type { SurplusLot, CanningFacility, FoodBank, Quote } from '../../packages/shared/src/types';
+import { scoreLot, type ScoreBreakdown } from './scorer';
+import { draftProcurement, type DraftProcurementAction } from './procure';
+import { matchFacilities, type FacilityMatch } from './canning';
+import { planDelivery, type ShipmentDraft } from './route';
+import { createApprovalRequest, type Approval } from './approvals';
 
-export function runPipeline(lot: SurplusLot): RecommendationBundle {
+export type PipelineResult = {
+  lotId: string;
+  score: ScoreBreakdown;
+  procurement: {
+    draft: DraftProcurementAction;
+    approvalRequest: Approval;
+  };
+  canning: {
+    topMatch: FacilityMatch;
+    allMatches: FacilityMatch[];
+    approvalRequest: Approval;
+  };
+  delivery: {
+    drafts: ShipmentDraft[];
+    approvalRequest: Approval;
+  };
+};
+
+export function runPipeline(
+  lot: SurplusLot,
+  quotes: Quote[],
+  facilities: CanningFacility[],
+  foodBanks: FoodBank[]
+): PipelineResult {
   // Step 1: Score
-  const score = scoreLot(lot, FOOD_BANKS, CANNING_FACILITIES);
+  const score = scoreLot(lot, facilities, foodBanks);
 
-  // Step 2: Draft procurement — creates approval request, does NOT submit
-  const procurementDraft = draftProcurement(lot, QUOTES);
-  createApprovalRequest('PROCUREMENT', lot.id, 'SurplusLot', {
-    ...procurementDraft,
-  });
+  // Step 2: Draft procurement — requires operator approval before sending
+  const procurementDraft = draftProcurement(lot, quotes);
+  const procurementApproval = createApprovalRequest(
+    'PROCUREMENT',
+    lot.id,
+    procurementDraft,
+    'agent:procure'
+  );
 
-  // Step 3: Match facilities — top match triggers facility booking approval request
-  const facilityMatches = matchFacilities(lot, CANNING_FACILITIES);
-  if (facilityMatches.length > 0) {
-    createApprovalRequest('FACILITY_BOOKING', lot.id, 'SurplusLot', {
-      facilityId: facilityMatches[0].facility.id,
-      estimatedDays: facilityMatches[0].estimatedDays,
-    });
-  }
+  // Step 3: Match canning facility — requires operator approval before booking
+  const facilityMatches = matchFacilities(lot, facilities);
+  const topMatch = facilityMatches[0];
+  const canningApproval = createApprovalRequest(
+    'FACILITY_BOOKING',
+    lot.id,
+    { topMatch, allMatches: facilityMatches },
+    'agent:canning'
+  );
 
-  // Step 4: Draft delivery plan — creates delivery release approval request
-  const topFacility = facilityMatches[0]?.facility ?? CANNING_FACILITIES[0];
-  const shipmentDrafts = planDeliveries(lot, topFacility, FOOD_BANKS);
-  if (shipmentDrafts.length > 0) {
-    createApprovalRequest('DELIVERY_RELEASE', lot.id, 'SurplusLot', {
-      shipmentDrafts,
-    });
-  }
-
-  // Step 5: Generate human-readable brief
-  const brief = generateBrief({
-    alert: {
-      fisheryId: lot.supplierId,
-      species: lot.species,
-      lbs: lot.lbs,
-      landingAt: lot.location,
-      marketPricePerLb: lot.marketPricePerLb,
-      proposedDiscountPct: Math.round((1 - lot.pricePerLb / lot.marketPricePerLb) * 100),
-    },
-    canningJob: {
-      surplusId: lot.id,
-      coPackerId: topFacility.id,
-      cansTarget: Math.floor(lot.lbs * 1.8),
-      stagePlan: [],
-      yieldPct: 88,
-    },
-    deliveredTo: shipmentDrafts.map((s) => ({
-      neighborhood: s.foodBankName,
-      cansAllocated: s.estimatedCases * 24,
-    })),
-  });
+  // Step 4: Plan delivery — requires operator approval before releasing
+  const estimatedCans = topMatch?.estimatedCans ?? Math.floor(lot.lbs * 1.8 * 0.88);
+  const deliveryDrafts = topMatch
+    ? planDelivery(estimatedCans, foodBanks, topMatch.facility)
+    : [];
+  const deliveryApproval = createApprovalRequest(
+    'DELIVERY_RELEASE',
+    lot.id,
+    deliveryDrafts,
+    'agent:route'
+  );
 
   return {
-    lot,
+    lotId: lot.id,
     score,
-    procurementDraft,
-    facilityMatches,
-    shipmentDrafts,
-    brief,
+    procurement: { draft: procurementDraft, approvalRequest: procurementApproval },
+    canning: { topMatch, allMatches: facilityMatches, approvalRequest: canningApproval },
+    delivery: { drafts: deliveryDrafts, approvalRequest: deliveryApproval },
   };
 }

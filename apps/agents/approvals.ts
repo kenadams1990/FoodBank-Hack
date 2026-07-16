@@ -1,112 +1,112 @@
-// approvals.ts — Human Approval Gate
-// Every agent draft must pass through here before state changes.
-// createApprovalRequest() — approveAction() — rejectAction()
-// All actions are idempotent and emit audit events.
+// approvals.ts — Approval Gate
+// Every agent draft must pass through an ApprovalRequest before state changes.
+// Agent recommends. Operator approves. System records.
 
 import type { Approval, ApprovalType, AuditEvent } from '../../packages/shared/src/types';
-import { appStore } from '../web/src/lib/store';
 
-function nowISO(): string {
-  return new Date().toISOString();
-}
+let _approvals: Approval[] = [];
+let _auditLog: AuditEvent[] = [];
+let _seq = 1;
 
-function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
+function uid(prefix: string) { return `${prefix}-${Date.now()}-${_seq++}`; }
+function now() { return new Date().toISOString(); }
 
+/** Create a pending approval request for an agent draft action */
 export function createApprovalRequest(
   approvalType: ApprovalType,
   entityId: string,
-  entityType: string,
-  draftPayload: Record<string, unknown>
+  draftPayload: unknown,
+  actor = 'agent'
 ): Approval {
   const approval: Approval = {
-    id: generateId('apr'),
+    id: uid('apr'),
     approvalType,
     status: 'PENDING',
     entityId,
-    entityType,
-    operatorId: null,
+    operatorId: '',
     draftPayload,
-    notes: null,
-    createdAt: nowISO(),
-    resolvedAt: null,
+    createdAt: now(),
   };
-  appStore.approvals.push(approval);
+  _approvals.push(approval);
 
-  const audit: AuditEvent = {
-    id: generateId('aud'),
-    entityType: 'Approval',
-    entityId: approval.id,
-    action: 'CREATED',
-    actor: 'system',
-    beforeState: null,
-    afterState: { status: 'PENDING', approvalType, entityId },
-    timestamp: nowISO(),
-  };
-  appStore.auditEvents.push(audit);
+  _auditLog.push({
+    id: uid('ae'),
+    entityType: 'APPROVAL',
+    entityId,
+    action: 'APPROVAL_CREATED',
+    actor,
+    afterState: approval,
+    timestamp: now(),
+  });
 
   return approval;
 }
 
+/** Approve a pending request. Idempotent — double-approve is a no-op. */
 export function approveAction(
   approvalId: string,
   operatorId: string,
   notes?: string
 ): Approval {
-  const approval = appStore.approvals.find((a) => a.id === approvalId);
+  const approval = _approvals.find(a => a.id === approvalId);
   if (!approval) throw new Error(`Approval ${approvalId} not found`);
-  // Idempotent — already approved is a no-op
-  if (approval.status === 'APPROVED') return approval;
-  if (approval.status === 'REJECTED') throw new Error(`Approval ${approvalId} already rejected`);
+  if (approval.status === 'APPROVED') return approval; // idempotent
+  if (approval.status !== 'PENDING') throw new Error(`Cannot approve: status is ${approval.status}`);
 
   const before = { ...approval };
   approval.status = 'APPROVED';
   approval.operatorId = operatorId;
-  approval.notes = notes ?? null;
-  approval.resolvedAt = nowISO();
+  approval.notes = notes;
+  approval.resolvedAt = now();
 
-  appStore.auditEvents.push({
-    id: generateId('aud'),
-    entityType: 'Approval',
-    entityId: approvalId,
+  _auditLog.push({
+    id: uid('ae'),
+    entityType: 'APPROVAL',
+    entityId: approval.entityId,
     action: 'APPROVED',
     actor: operatorId,
-    beforeState: before as unknown as Record<string, unknown>,
-    afterState: { status: 'APPROVED', operatorId, notes },
-    timestamp: nowISO(),
+    beforeState: before,
+    afterState: { ...approval },
+    timestamp: now(),
   });
 
   return approval;
 }
 
+/** Reject a pending request. Idempotent. */
 export function rejectAction(
   approvalId: string,
   operatorId: string,
   notes?: string
 ): Approval {
-  const approval = appStore.approvals.find((a) => a.id === approvalId);
+  const approval = _approvals.find(a => a.id === approvalId);
   if (!approval) throw new Error(`Approval ${approvalId} not found`);
-  // Idempotent
-  if (approval.status === 'REJECTED') return approval;
-  if (approval.status === 'APPROVED') throw new Error(`Approval ${approvalId} already approved`);
+  if (approval.status === 'REJECTED') return approval; // idempotent
+  if (approval.status !== 'PENDING') throw new Error(`Cannot reject: status is ${approval.status}`);
 
   const before = { ...approval };
   approval.status = 'REJECTED';
   approval.operatorId = operatorId;
-  approval.notes = notes ?? null;
-  approval.resolvedAt = nowISO();
+  approval.notes = notes;
+  approval.resolvedAt = now();
 
-  appStore.auditEvents.push({
-    id: generateId('aud'),
-    entityType: 'Approval',
-    entityId: approvalId,
+  _auditLog.push({
+    id: uid('ae'),
+    entityType: 'APPROVAL',
+    entityId: approval.entityId,
     action: 'REJECTED',
     actor: operatorId,
-    beforeState: before as unknown as Record<string, unknown>,
-    afterState: { status: 'REJECTED', operatorId, notes },
-    timestamp: nowISO(),
+    beforeState: before,
+    afterState: { ...approval },
+    timestamp: now(),
   });
 
   return approval;
+}
+
+export function getApprovals() { return [..._approvals]; }
+export function getAuditLog() { return [..._auditLog]; }
+export function resetStore(seed?: { approvals?: Approval[]; auditLog?: AuditEvent[] }) {
+  _approvals = seed?.approvals ?? [];
+  _auditLog = seed?.auditLog ?? [];
 }

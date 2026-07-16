@@ -1,68 +1,70 @@
-// procure.ts — Procurement Negotiation Recommender
-// Produces a DraftProcurementAction. NEVER auto-submits — requires human approval.
+// procure.ts — Procurement Negotiation Agent
+// Produces DraftProcurementAction — NEVER auto-committed. Human approves.
 
-import type { SurplusLot, Quote, DraftProcurementAction } from '../../packages/shared/src/types';
+import type { SurplusLot, Quote } from '../../packages/shared/src/types';
 
-/** Legacy RFQ type kept for backward compatibility */
-export type RFQDraft = {
-  surplusId: string;
-  fisheryId: string;
-  proposedPricePerLb: number;
+export type DraftProcurementAction = {
+  lotId: string;
+  supplierId: string;
+  recommendedPricePerLb: number;
+  recommendedMoqLbs: number;
   offerExpiresHrs: number;
-  negotiationNotes: string;
+  negotiationScript: string;
+  estimatedTotalCost: number;
+  estimatedSavingsVsMarket: number;
 };
 
-/**
- * Generates a counter-offer draft for a surplus lot.
- * The draft must be approved before any communication is sent.
- */
+/** Drafts a counter-offer for operator review. Agent recommends. Human sends. */
 export function draftProcurement(
   lot: SurplusLot,
-  existingQuotes: Quote[]
+  quotes: Quote[]
 ): DraftProcurementAction {
-  const lotQuotes = existingQuotes.filter((q) => q.lotId === lot.id);
-  const lowestQuote = lotQuotes.sort((a, b) => a.pricePerLb - b.pricePerLb)[0];
+  const openQuotes = quotes
+    .filter(q => q.lotId === lot.id && q.status === 'OPEN')
+    .sort((a, b) => a.pricePerLb - b.pricePerLb);
 
-  // Target: 5% below lowest existing quote, or 70% of market if no quotes yet
-  const basePrice = lowestQuote
-    ? lowestQuote.pricePerLb * 0.95
-    : lot.marketPricePerLb * 0.70;
-  const counterOfferPricePerLb = Math.round(basePrice * 100) / 100;
+  const bestQuote = openQuotes[0];
+  // Target 5% below best quote, floor at 60% of market
+  const targetPrice = bestQuote
+    ? Math.max(
+        Math.round(bestQuote.pricePerLb * 0.95 * 100) / 100,
+        Math.round(lot.marketPricePerLb * 0.60 * 100) / 100
+      )
+    : Math.round(lot.marketPricePerLb * (1 - lot.proposedDiscountPct / 100) * 100) / 100;
 
-  // Suggest MOQ at 60% of lot to give supplier flexibility
-  const suggestedMoqLbs = Math.round(lot.lbs * 0.6);
+  const moq = bestQuote ? bestQuote.moqLbs : lot.lbs;
+  const estimatedTotalCost = Math.round(targetPrice * lot.lbs * 100) / 100;
+  const estimatedSavingsVsMarket = Math.round((lot.marketPricePerLb - targetPrice) * lot.lbs * 100) / 100;
 
-  const savingsPct = Math.round((1 - counterOfferPricePerLb / lot.marketPricePerLb) * 100);
-
-  const justification =
-    `Bulk non-profit purchase for TideLift food bank supply program. ` +
-    `${lot.lbs.toLocaleString()} lbs ${lot.species} at $${counterOfferPricePerLb}/lb ` +
-    `represents ${savingsPct}% off market ($${lot.marketPricePerLb}/lb). ` +
-    `Tax-exempt 501(c)(3) status available. ` +
-    `Lot expires ${lot.expiryDate} — swift commitment benefits both parties.`;
+  const negotiationScript = [
+    `Subject: TideLift Bulk Purchase Inquiry — ${lot.lbs.toLocaleString()} lbs ${lot.species}`,
+    ``,
+    `Dear ${lot.supplierId} team,`,
+    ``,
+    `We are reaching out on behalf of TideLift, a non-profit seafood rescue program`,
+    `that converts surplus catch into shelf-stable canned protein for regional food banks.`,
+    ``,
+    `We are interested in purchasing ${lot.lbs.toLocaleString()} lbs of ${lot.species}`,
+    `(Lot ${lot.id}, harvested ${lot.harvestDate}) at $${targetPrice}/lb.`,
+    ``,
+    `Basis for pricing: bulk non-profit purchase, tax-exempt status available,`,
+    `immediate pickup within 48 hrs, no cold-storage cost to you.`,
+    ``,
+    `This offer is valid for 24 hours. Minimum order: ${moq.toLocaleString()} lbs.`,
+    ``,
+    `Please confirm availability and acceptance via reply.`,
+    ``,
+    `— TideLift Procurement (draft pending operator approval)`,
+  ].join('\n');
 
   return {
     lotId: lot.id,
     supplierId: lot.supplierId,
-    counterOfferPricePerLb,
-    suggestedMoqLbs,
-    justification,
-    offerValidHrs: 24,
-  };
-}
-
-/** Legacy compatibility: generates RFQ from a SurplusAlert */
-export function generateRFQ(alert: { fisheryId: string; species: string; lbs: number; marketPricePerLb: number; proposedDiscountPct: number }): RFQDraft {
-  const proposedPricePerLb = alert.marketPricePerLb * (1 - alert.proposedDiscountPct / 100);
-  return {
-    surplusId: `${alert.fisheryId}-${Date.now()}`,
-    fisheryId: alert.fisheryId,
-    proposedPricePerLb: Math.round(proposedPricePerLb * 100) / 100,
+    recommendedPricePerLb: targetPrice,
+    recommendedMoqLbs: moq,
     offerExpiresHrs: 24,
-    negotiationNotes:
-      `Bulk buy for non-profit canning program. ` +
-      `${alert.lbs.toLocaleString()} lbs ${alert.species}. ` +
-      `Requesting ${alert.proposedDiscountPct}% discount off market ($${alert.marketPricePerLb}/lb). ` +
-      `Buyer is a food bank supply program — tax-exempt status available.`,
+    negotiationScript,
+    estimatedTotalCost,
+    estimatedSavingsVsMarket,
   };
 }
