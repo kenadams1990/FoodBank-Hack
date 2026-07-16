@@ -2,12 +2,12 @@
 // Runs all agents in sequence. Each step produces a draft.
 // No state changes until a human approves via approvals.ts.
 
-import type { SurplusLot, CanningFacility, FoodBank, Quote } from '../../packages/shared/src/types';
+import type { SurplusLot, CanningFacility, FoodBank, Quote, Approval } from '../../packages/shared/src/types';
 import { scoreLot, type ScoreBreakdown } from './scorer';
 import { draftProcurement, type DraftProcurementAction } from './procure';
 import { matchFacilities, type FacilityMatch } from './canning';
 import { planDelivery, type ShipmentDraft } from './route';
-import { createApprovalRequest, type Approval } from './approvals';
+import { createApprovalRequest } from './approvals';
 
 export type PipelineResult = {
   lotId: string;

@@ -28,7 +28,7 @@ describe('generateBrief', () => {
   it('sums cans allocated across all delivery neighborhoods', () => {
     const brief = generateBrief({ alert, canningJob, deliveredTo });
 
-    expect(brief).toContain('Delivered**: 3,600 cans across 2 neighborhood(s)');
+    expect(brief).toContain('Delivered**: 3,600 cans across 2 partner(s)');
   });
 
   it('lists each neighborhood with its allocation', () => {

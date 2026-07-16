@@ -148,3 +148,180 @@ export type CanningJob = {
   stagePlan: string[];
   yieldPct?: number;
 };
+
+// ============================================================================
+// Lot lifecycle — suppliers, surplus lots, facilities, food banks, quotes.
+// Used by the scorer/procure/canning/pipeline agents and the dashboard store.
+// ============================================================================
+
+export type LotStatus =
+  | 'AVAILABLE'
+  | 'SCORED'
+  | 'PROCUREMENT_PENDING'
+  | 'PROCUREMENT_CONFIRMED'
+  | 'IN_PRODUCTION'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'EXPIRED';
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contact: string;
+  email: string;
+  phone: string;
+  location: string;
+  species: string[];
+  certifications: string[];
+  avgCapacityLbsPerWeek: number;
+}
+
+export interface SurplusLot {
+  id: string;
+  supplierId: string;
+  species: string;
+  lbs: number;
+  harvestDate: string; // ISO date
+  expiryDate: string; // ISO date
+  pricePerLb: number;
+  marketPricePerLb: number;
+  proposedDiscountPct: number;
+  landingLocation: string;
+  status: LotStatus;
+  score?: number; // 0..100, set once the scorer agent has run
+  notes?: string;
+}
+
+export interface FacilitySlot {
+  date: string; // ISO date
+  capacityLbs: number;
+}
+
+export interface CanningFacility {
+  id: string;
+  name: string;
+  location: string;
+  capacityCasesPerDay: number;
+  compatibleSpecies: string[];
+  certifications: string[];
+  costPerCan: number;
+  availableSlots: FacilitySlot[];
+}
+
+export interface FoodBank {
+  id: string;
+  name: string;
+  location: string;
+  region: string;
+  monthlyDemandCases: number;
+  contact: string;
+  email: string;
+  dietaryPrefs: string[];
+  accessWindows: string[];
+}
+
+export type QuoteStatus = 'OPEN' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+
+export interface Quote {
+  id: string;
+  lotId: string;
+  supplierId: string;
+  pricePerLb: number;
+  moqLbs: number;
+  validUntil: string; // ISO date
+  status: QuoteStatus;
+}
+
+// ============================================================================
+// Human-in-the-loop approvals + audit trail. Every agent draft becomes an
+// Approval; nothing changes state until an operator resolves it.
+// ============================================================================
+
+export type ApprovalType = 'PROCUREMENT' | 'FACILITY_BOOKING' | 'DELIVERY_RELEASE';
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface Approval {
+  id: string;
+  approvalType: ApprovalType;
+  status: ApprovalStatus;
+  entityId: string; // usually a lot id
+  operatorId: string; // empty until resolved
+  draftPayload: unknown;
+  notes?: string;
+  createdAt: string; // ISO timestamp
+  resolvedAt?: string; // ISO timestamp
+}
+
+export interface Shipment {
+  id: string;
+  lotId: string;
+  foodBankId: string;
+  cases: number;
+  eta: string; // ISO date
+  status: 'SCHEDULED' | 'IN_TRANSIT' | 'DELIVERED';
+}
+
+export interface AuditEvent {
+  id: string;
+  entityType: 'LOT' | 'APPROVAL' | 'SHIPMENT';
+  entityId: string;
+  action: string;
+  actor: string; // e.g. 'agent:scorer', 'operator:ken', 'system'
+  beforeState?: unknown;
+  afterState?: unknown;
+  timestamp: string; // ISO timestamp
+}
+
+// ============================================================================
+// Vessel → pickup → processing intake (current build focus, per onsite
+// advisors). CV runs twice: on-vessel at harvest (drives the purchase/
+// dispatch decision before the truck rolls) and dockside at transfer into
+// barcoded containers. QA/QC runs before AND after processing.
+// ============================================================================
+
+export interface CVEstimate {
+  count: number; // individual fish/shellfish detected
+  avgWeightLbs: number;
+  sizeGrade: 'S' | 'M' | 'L' | 'XL';
+  confidence: number; // 0..1
+}
+
+export interface VesselCatchLog {
+  id: string;
+  vesselName: string;
+  vesselType: 'wild-catch' | 'farm';
+  species: string;
+  estimatedLbs: number;
+  cvEstimate: CVEstimate; // from on-vessel/at-harvest computer vision
+  location: string; // dock / landing location
+  loggedAt: string; // ISO timestamp
+  pickupWindow: string; // e.g. "2026-07-16 14:00-16:00"
+}
+
+export interface PickupDispatch {
+  catchLogId: string;
+  recommend: boolean;
+  coldTransportUnit: string; // e.g. "CT-04 (reefer, 2°C)"
+  arrivalEta: string;
+  reason: string; // cites the on-vessel CV metrics driving the decision
+}
+
+export interface SortedContainer {
+  containerId: string; // barcoded reusable bin
+  catchLogId: string;
+  species: string;
+  sizeGrade: 'S' | 'M' | 'L' | 'XL';
+  lbs: number;
+  tempC: number; // thermal-cam surface reading at sort
+  qaStatus: 'PASS' | 'FLAG';
+  reason: string; // why it passed or was flagged
+}
+
+export interface DockIntakeResult {
+  catchLogId: string;
+  vesselName: string;
+  containers: SortedContainer[];
+  totalLbsAccepted: number;
+  flaggedCount: number;
+  summary: string; // draft summary — operator confirms before processing handoff
+}

@@ -8,7 +8,7 @@
 // Every row is a DRAFT recommendation, never an execution — "Agent recommends.
 // You decide." (human-in-the-loop is a product rule, see reason on every row).
 
-import type { AgencyNeed, DeliveryPlanRow } from '@tidelift/shared';
+import type { AgencyNeed, DeliveryPlanRow, FoodBank, CanningFacility } from '@tidelift/shared';
 
 // ---------------------------------------------------------------------------
 // Urgency scoring
@@ -152,6 +152,64 @@ export function replanAfterDrop(
 ): DeliveryPlanRow[] {
   const remainingNeeds = needs.filter((n) => n.agencyId !== droppedAgencyId);
   return planEquityDelivery(availableLbs, remainingNeeds);
+}
+
+// ---------------------------------------------------------------------------
+// Case-level delivery drafts for the lot pipeline (pipeline.ts).
+// planEquityDelivery above works in lbs against AgencyNeed; this works in
+// cases against FoodBank monthly demand, since that's what the canning
+// stage hands off. Same rule as everywhere else: drafts only.
+// ---------------------------------------------------------------------------
+
+export type ShipmentDraft = {
+  foodBankId: string;
+  foodBankName: string;
+  region: string;
+  casesAllocated: number;
+  accessWindow: string;
+  reason: string;
+};
+
+const CANS_PER_CASE = 24;
+
+/**
+ * Allocates finished cases across food banks, largest monthly demand first,
+ * each capped at its own monthly demand. Draft only — released by a human
+ * via a DELIVERY_RELEASE approval.
+ */
+export function planDelivery(
+  estimatedCans: number,
+  foodBanks: FoodBank[],
+  facility: CanningFacility
+): ShipmentDraft[] {
+  const totalCases = Math.floor(estimatedCans / CANS_PER_CASE);
+  const sorted = [...foodBanks].sort(
+    (a, b) => b.monthlyDemandCases - a.monthlyDemandCases
+  );
+
+  const drafts: ShipmentDraft[] = [];
+  let remaining = totalCases;
+
+  for (const fb of sorted) {
+    if (remaining <= 0) break;
+    const casesAllocated = Math.min(fb.monthlyDemandCases, remaining);
+    remaining -= casesAllocated;
+
+    drafts.push({
+      foodBankId: fb.id,
+      foodBankName: fb.name,
+      region: fb.region,
+      casesAllocated,
+      accessWindow: fb.accessWindows[0] ?? 'unscheduled',
+      reason:
+        `Allocated ${casesAllocated} of ${totalCases} cases from ${facility.name} ` +
+        `(${facility.location}) — covers ${Math.round((casesAllocated / fb.monthlyDemandCases) * 100)}% ` +
+        `of ${fb.name}'s monthly demand (${fb.monthlyDemandCases} cases). ` +
+        `Deliver within access window ${fb.accessWindows[0] ?? 'TBD'}.`,
+    });
+  }
+
+  return drafts;
 }
 
 /** Mock agency needs — replace with real food bank intake data */
