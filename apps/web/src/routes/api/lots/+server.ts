@@ -1,30 +1,32 @@
 // GET /api/lots — list surplus lots with scoring metadata
-import type { RequestHandler } from '@sveltejs/kit';
-import { store } from '$lib/store';
-import { LotFilterSchema, jsonOk, jsonError } from '$lib/validation';
-import { rankLots } from '../../../../agents/scorer';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { appStore } from '$lib/store';
+import { LotFilterSchema } from '$lib/validation';
+import { scoreLot } from '../../../../../agents/scorer';
 
 export const GET: RequestHandler = ({ url }) => {
   const params = Object.fromEntries(url.searchParams);
-  const parsed = LotFilterSchema.safeParse(params);
-  if (!parsed.success) return jsonError(parsed.error.message);
+  const filter = LotFilterSchema.safeParse(params);
+  if (!filter.success) return json({ error: filter.error.flatten() }, { status: 400 });
 
-  const { species, status, minScore, maxScore } = parsed.data;
+  let lots = appStore.lots;
+  const { species, status, minScore, maxScore } = filter.data;
+  if (species) lots = lots.filter((l) => l.species === species);
+  if (status) lots = lots.filter((l) => l.status === status);
 
-  // Score all lots against current store state
-  const scored = rankLots(store.lots, store.facilities, store.foodBanks);
+  const withScores = lots.map((lot) => {
+    const scored = lot.score != null
+      ? lot
+      : { ...lot, score: scoreLot(lot, appStore.foodBanks, appStore.facilities).score };
+    return scored;
+  });
 
-  // Also include non-AVAILABLE lots with their existing scores
-  const others = store.lots
-    .filter(l => l.status !== 'AVAILABLE' && l.status !== 'SCORING')
-    .map(l => ({ ...l, score: l.score ?? 0, scoreBreakdown: l.scoreBreakdown ?? null }));
+  const filtered = withScores.filter((l) => {
+    if (minScore != null && (l.score ?? 0) < minScore) return false;
+    if (maxScore != null && (l.score ?? 0) > maxScore) return false;
+    return true;
+  });
 
-  let results = [...scored, ...others];
-
-  if (species) results = results.filter(l => l.species === species);
-  if (status) results = results.filter(l => l.status === status);
-  if (minScore !== undefined) results = results.filter(l => (l.score ?? 0) >= minScore!);
-  if (maxScore !== undefined) results = results.filter(l => (l.score ?? 0) <= maxScore!);
-
-  return jsonOk({ lots: results, total: results.length });
+  return json({ lots: filtered, total: filtered.length });
 };

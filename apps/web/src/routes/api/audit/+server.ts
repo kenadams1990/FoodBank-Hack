@@ -1,22 +1,23 @@
 // GET /api/audit — paginated audit log
-import type { RequestHandler } from '@sveltejs/kit';
-import { store } from '$lib/store';
-import { AuditQuerySchema, jsonOk, jsonError } from '$lib/validation';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { appStore } from '$lib/store';
+import { AuditFilterSchema } from '$lib/validation';
 
 export const GET: RequestHandler = ({ url }) => {
   const params = Object.fromEntries(url.searchParams);
-  const parsed = AuditQuerySchema.safeParse(params);
-  if (!parsed.success) return jsonError(parsed.error.message);
+  const filter = AuditFilterSchema.safeParse(params);
+  if (!filter.success) return json({ error: filter.error.flatten() }, { status: 400 });
 
-  const { page, pageSize, entityType, entityId } = parsed.data;
-
-  let events = [...store.auditEvents].reverse(); // newest first
-  if (entityType) events = events.filter(e => e.entityType === entityType);
-  if (entityId) events = events.filter(e => e.entityId === entityId);
+  const { page, pageSize, entityType } = filter.data;
+  let events = [...appStore.auditEvents].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+  if (entityType) events = events.filter((e) => e.entityType === entityType);
 
   const total = events.length;
   const start = (page - 1) * pageSize;
   const items = events.slice(start, start + pageSize);
 
-  return jsonOk({ events: items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
+  return json({ events: items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
 };

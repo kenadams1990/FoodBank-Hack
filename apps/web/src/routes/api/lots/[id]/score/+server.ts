@@ -1,28 +1,19 @@
 // POST /api/lots/:id/score — trigger opportunity scoring for a lot
-import type { RequestHandler } from '@sveltejs/kit';
-import { store, addAuditEvent } from '$lib/store';
-import { jsonOk, jsonError } from '$lib/validation';
-import { scoreLot } from '../../../../../agents/scorer';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { appStore, emitAudit } from '$lib/store';
+import { scoreLot } from '../../../../../../agents/scorer';
 
 export const POST: RequestHandler = ({ params }) => {
-  const lot = store.lots.find(l => l.id === params.id);
-  if (!lot) return jsonError('Lot not found', 404);
+  const lot = appStore.lots.find((l) => l.id === params.id);
+  if (!lot) return json({ error: 'Lot not found' }, { status: 404 });
 
-  const before = { status: lot.status, score: lot.score };
-  const scored = scoreLot(lot, store.facilities, store.foodBanks);
+  const score = scoreLot(lot, appStore.foodBanks, appStore.facilities);
+  const before = { score: lot.score, status: lot.status };
+  lot.score = score.score;
+  if (lot.status === 'AVAILABLE') lot.status = 'SCORED';
 
-  lot.score = scored.score;
-  lot.scoreBreakdown = scored.scoreBreakdown;
-  if (lot.status === 'AVAILABLE') lot.status = 'SCORING';
+  emitAudit('SurplusLot', lot.id, 'SCORED', 'system', before, { score: score.score, status: lot.status });
 
-  addAuditEvent({
-    entityType: 'SurplusLot',
-    entityId: lot.id,
-    action: 'SCORED',
-    actor: 'agent:scorer',
-    beforeState: before,
-    afterState: { score: lot.score, scoreBreakdown: lot.scoreBreakdown, status: lot.status },
-  });
-
-  return jsonOk({ lot, scoreBreakdown: scored.scoreBreakdown });
+  return json({ lot, score });
 };

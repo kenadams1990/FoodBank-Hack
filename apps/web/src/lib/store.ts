@@ -1,50 +1,62 @@
-// store.ts — In-memory state store (replaces DB for demo; swap for Prisma/postgres in production)
+// store.ts — In-memory application state (replaces DB for demo)
+// Import this into all API routes to read/write shared state.
+
 import {
   SUPPLIERS, SURPLUS_LOTS, CANNING_FACILITIES, FOOD_BANKS,
   QUOTES, APPROVALS, SHIPMENTS, AUDIT_EVENTS
-} from '../../../../packages/shared/src/mockData';
+} from '../../../../../packages/shared/src/mockData';
 import type {
   Supplier, SurplusLot, CanningFacility, FoodBank,
   Quote, Approval, Shipment, AuditEvent
-} from '../../../../packages/shared/src/types';
-import { initApprovalStore } from '../../../agents/approvals';
+} from '../../../../../packages/shared/src/types';
 
 function clone<T>(arr: T[]): T[] {
   return JSON.parse(JSON.stringify(arr));
 }
 
-export const store = {
-  suppliers: clone(SUPPLIERS) as Supplier[],
-  lots: clone(SURPLUS_LOTS) as SurplusLot[],
-  facilities: clone(CANNING_FACILITIES) as CanningFacility[],
-  foodBanks: clone(FOOD_BANKS) as FoodBank[],
-  quotes: clone(QUOTES) as Quote[],
-  approvals: clone(APPROVALS) as Approval[],
-  shipments: clone(SHIPMENTS) as Shipment[],
-  auditEvents: clone(AUDIT_EVENTS) as AuditEvent[],
+export const appStore: {
+  suppliers: Supplier[];
+  lots: SurplusLot[];
+  facilities: CanningFacility[];
+  foodBanks: FoodBank[];
+  quotes: Quote[];
+  approvals: Approval[];
+  shipments: Shipment[];
+  auditEvents: AuditEvent[];
+} = {
+  suppliers: clone(SUPPLIERS),
+  lots: clone(SURPLUS_LOTS),
+  facilities: clone(CANNING_FACILITIES),
+  foodBanks: clone(FOOD_BANKS),
+  quotes: clone(QUOTES),
+  approvals: clone(APPROVALS),
+  shipments: clone(SHIPMENTS),
+  auditEvents: clone(AUDIT_EVENTS),
 };
 
-// Sync approval engine with store
-initApprovalStore(store.approvals, store.auditEvents);
-
-export function resetStore() {
-  store.suppliers = clone(SUPPLIERS) as Supplier[];
-  store.lots = clone(SURPLUS_LOTS) as SurplusLot[];
-  store.facilities = clone(CANNING_FACILITIES) as CanningFacility[];
-  store.foodBanks = clone(FOOD_BANKS) as FoodBank[];
-  store.quotes = clone(QUOTES) as Quote[];
-  store.approvals = clone(APPROVALS) as Approval[];
-  store.shipments = clone(SHIPMENTS) as Shipment[];
-  store.auditEvents = clone(AUDIT_EVENTS) as AuditEvent[];
-  initApprovalStore(store.approvals, store.auditEvents);
+export function resetStore(): void {
+  appStore.suppliers = clone(SUPPLIERS);
+  appStore.lots = clone(SURPLUS_LOTS);
+  appStore.facilities = clone(CANNING_FACILITIES);
+  appStore.foodBanks = clone(FOOD_BANKS);
+  appStore.quotes = clone(QUOTES);
+  appStore.approvals = clone(APPROVALS);
+  appStore.shipments = clone(SHIPMENTS);
+  appStore.auditEvents = clone(AUDIT_EVENTS);
 }
 
-export function addAuditEvent(event: Omit<AuditEvent, 'id' | 'timestamp'>): AuditEvent {
-  const e: AuditEvent = {
-    ...event,
+export function emitAudit(
+  entityType: string,
+  entityId: string,
+  action: string,
+  actor: string,
+  beforeState: Record<string, unknown> | null,
+  afterState: Record<string, unknown> | null
+): void {
+  appStore.auditEvents.push({
     id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    entityType, entityId, action, actor,
+    beforeState, afterState,
     timestamp: new Date().toISOString(),
-  };
-  store.auditEvents.push(e);
-  return e;
+  });
 }

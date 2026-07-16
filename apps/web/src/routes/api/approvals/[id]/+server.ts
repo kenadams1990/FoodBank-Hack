@@ -1,75 +1,46 @@
-// PATCH /api/approvals/:id — approve or reject (OPERATOR only, idempotent)
-import type { RequestHandler } from '@sveltejs/kit';
-import { store, addAuditEvent } from '$lib/store';
-import { jsonOk, jsonError, requireOperator, PatchApprovalSchema } from '$lib/validation';
-import { approveAction, rejectAction } from '../../../../../agents/approvals';
+// PATCH /api/approvals/:id — approve or reject (idempotent, OPERATOR role)
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { appStore, emitAudit } from '$lib/store';
+import { PatchApprovalSchema } from '$lib/validation';
 
-export const GET: RequestHandler = ({ params }) => {
-  const approval = store.approvals.find(a => a.id === params.id);
-  if (!approval) return jsonError('Approval not found', 404);
-  return jsonOk({ approval });
-};
-
-export const PATCH: RequestHandler = async ({ request, params }) => {
-  requireOperator(request);
-  let body: unknown;
-  try { body = await request.json(); }
-  catch { return jsonError('Invalid JSON'); }
-
+export const PATCH: RequestHandler = async ({ params, request }) => {
+  const body = await request.json();
   const parsed = PatchApprovalSchema.safeParse(body);
-  if (!parsed.success) return jsonError(parsed.error.message);
+  if (!parsed.success) return json({ error: parsed.error.flatten() }, { status: 400 });
+
+  const approval = appStore.approvals.find((a) => a.id === params.id);
+  if (!approval) return json({ error: 'Approval not found' }, { status: 404 });
 
   const { action, operatorId, notes } = parsed.data;
+  const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
 
-  let approval;
-  try {
-    approval = action === 'approve'
-      ? approveAction(params.id!, operatorId, notes)
-      : rejectAction(params.id!, operatorId, notes);
-  } catch (e: unknown) {
-    return jsonError(e instanceof Error ? e.message : 'Unknown error');
+  // Idempotent: already in target state = no-op
+  if (approval.status === newStatus) return json({ approval });
+  // Cannot override a terminal state with the opposite
+  if (approval.status !== 'PENDING') {
+    return json({ error: `Approval is already ${approval.status}` }, { status: 409 });
   }
 
-  // Propagate status to lot if procurement approval
-  if (approval.approvalType === 'PROCUREMENT') {
-    const lot = store.lots.find(l => l.id === approval.entityId);
-    if (lot) {
-      const before = { status: lot.status };
-      lot.status = approval.status === 'APPROVED' ? 'PROCUREMENT_CONFIRMED' : 'AVAILABLE';
-      addAuditEvent({
-        entityType: 'SurplusLot',
-        entityId: lot.id,
-        action: 'STATUS_CHANGED',
-        actor: operatorId,
-        beforeState: before,
-        afterState: { status: lot.status },
-      });
+  const before = { ...approval };
+  approval.status = newStatus;
+  approval.operatorId = operatorId;
+  approval.notes = notes ?? null;
+  approval.resolvedAt = new Date().toISOString();
+
+  emitAudit('Approval', approval.id, newStatus, operatorId,
+    before as unknown as Record<string, unknown>,
+    { status: newStatus, operatorId, notes });
+
+  // Side-effect: advance lot status on PROCUREMENT approval
+  if (newStatus === 'APPROVED' && approval.approvalType === 'PROCUREMENT') {
+    const lot = appStore.lots.find((l) => l.id === approval.entityId);
+    if (lot && (lot.status === 'SCORED' || lot.status === 'PENDING_PROCUREMENT' || lot.status === 'AVAILABLE')) {
+      const lotBefore = { status: lot.status };
+      lot.status = 'PROCUREMENT_CONFIRMED';
+      emitAudit('SurplusLot', lot.id, 'STATUS_CHANGE', 'system', lotBefore, { status: 'PROCUREMENT_CONFIRMED' });
     }
   }
 
-  if (approval.approvalType === 'FACILITY_BOOKING') {
-    const lot = store.lots.find(l => l.id === approval.entityId);
-    if (lot && approval.status === 'APPROVED') {
-      const before = { status: lot.status };
-      lot.status = 'IN_PRODUCTION';
-      addAuditEvent({
-        entityType: 'SurplusLot', entityId: lot.id, action: 'STATUS_CHANGED',
-        actor: operatorId, beforeState: before, afterState: { status: 'IN_PRODUCTION' },
-      });
-    }
-  }
-
-  if (approval.approvalType === 'DELIVERY_RELEASE') {
-    const lot = store.lots.find(l => l.id === approval.entityId);
-    if (lot && approval.status === 'APPROVED') {
-      const before = { status: lot.status };
-      lot.status = 'SHIPPED';
-      addAuditEvent({
-        entityType: 'SurplusLot', entityId: lot.id, action: 'STATUS_CHANGED',
-        actor: operatorId, beforeState: before, afterState: { status: 'SHIPPED' },
-      });
-    }
-  }
-
-  return jsonOk({ approval });
+  return json({ approval });
 };
