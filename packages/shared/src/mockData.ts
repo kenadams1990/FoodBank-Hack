@@ -228,6 +228,9 @@ export const CANNING_FACILITIES: CanningFacility[] = [
 ];
 
 // ── Food Banks ───────────────────────────────────────────────────────────────────────────────
+// Task 2: added currentlyAccepting + maxInboundLbsPerWeek to all 6 entries.
+// All set to currentlyAccepting: true for the demo scenario.
+// maxInboundLbsPerWeek values are realistic relative to monthlyDemandCases.
 
 export const FOOD_BANKS: FoodBank[] = [
   {
@@ -240,6 +243,8 @@ export const FOOD_BANKS: FoodBank[] = [
     email: 'darius@accfb.org',
     dietaryPrefs: ['halal', 'low-sodium'],
     accessWindows: ['Mon 8-11', 'Wed 8-11', 'Fri 8-11'],
+    currentlyAccepting: true,
+    maxInboundLbsPerWeek: 15000,
   },
   {
     id: 'fb-002',
@@ -251,6 +256,8 @@ export const FOOD_BANKS: FoodBank[] = [
     email: 'maria@sdfoodbank.org',
     dietaryPrefs: ['low-sodium'],
     accessWindows: ['Tue 9-1', 'Thu 9-1', 'Sat 9-12'],
+    currentlyAccepting: true,
+    maxInboundLbsPerWeek: 20000,
   },
   {
     id: 'fb-003',
@@ -262,6 +269,8 @@ export const FOOD_BANKS: FoodBank[] = [
     email: 'priya@sfmfoodbank.org',
     dietaryPrefs: ['no-shellfish', 'vegetarian-available'],
     accessWindows: ['Mon 10-2', 'Thu 10-2'],
+    currentlyAccepting: true,
+    maxInboundLbsPerWeek: 8000,
   },
   {
     id: 'fb-004',
@@ -273,6 +282,8 @@ export const FOOD_BANKS: FoodBank[] = [
     email: 'kenji@refb.org',
     dietaryPrefs: [],
     accessWindows: ['Wed 8-12', 'Fri 8-12'],
+    currentlyAccepting: true,
+    maxInboundLbsPerWeek: 6000,
   },
   {
     id: 'fb-005',
@@ -284,6 +295,8 @@ export const FOOD_BANKS: FoodBank[] = [
     email: 'sandra@oregonfoodbank.org',
     dietaryPrefs: ['low-sodium', 'gluten-free-available'],
     accessWindows: ['Mon 7-11', 'Wed 7-11', 'Fri 7-11'],
+    currentlyAccepting: true,
+    maxInboundLbsPerWeek: 18000,
   },
   {
     id: 'fb-006',
@@ -295,6 +308,8 @@ export const FOOD_BANKS: FoodBank[] = [
     email: 'carlos@lafoodbank.org',
     dietaryPrefs: ['halal', 'kosher-available', 'low-sodium'],
     accessWindows: ['Mon 6-10', 'Tue 6-10', 'Wed 6-10', 'Thu 6-10', 'Fri 6-10'],
+    currentlyAccepting: true,
+    maxInboundLbsPerWeek: 30000,
   },
 ];
 

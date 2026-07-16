@@ -94,6 +94,7 @@ function weeksOfStockRemaining(
  * 1. SURPLUS_LOT — AVAILABLE lot matching the species (most urgent expiry first
  *    — rescues perishables simultaneously)
  * 2. LATERAL_TRANSFER — a peer food bank with apparent surplus of the item
+ *    (Task 2: only considers food banks where currentlyAccepting !== false)
  * 3. SUPPLIER_ORDER — fallback: new procurement
  */
 function recommendSource(
@@ -126,8 +127,9 @@ function recommendSource(
   }
 
   // 2. Lateral transfer — peer food bank with higher monthly demand (proxy for surplus)
+  // Task 2: skip food banks where currentlyAccepting === false.
   const peerWithSurplus = peerFoodBanks
-    .filter((fb) => fb.id !== thisFoodBankId)
+    .filter((fb) => fb.id !== thisFoodBankId && fb.currentlyAccepting !== false)
     .sort((a, b) => b.monthlyDemandCases - a.monthlyDemandCases)[0];
 
   if (peerWithSurplus) {

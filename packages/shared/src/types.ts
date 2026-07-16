@@ -216,6 +216,13 @@ export interface FoodBank {
   email: string;
   dietaryPrefs: string[];
   accessWindows: string[];
+  // ---------------------------------------------------------------------------
+  // Receiver capacity flags (Task 2)
+  // currentlyAccepting: absent = treated as true (conservative default)
+  // maxInboundLbsPerWeek: absent = unlimited
+  // ---------------------------------------------------------------------------
+  currentlyAccepting?: boolean;
+  maxInboundLbsPerWeek?: number;
 }
 
 export type QuoteStatus = 'OPEN' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
@@ -401,4 +408,36 @@ export interface ReplenishmentList {
   criticalCount: number;              // items at 0 weeks stock
   totalSuggestedLbs: number;
   reason: string;                     // always present
+}
+
+// ============================================================================
+// Overflow Disposition Agent — output types for overflow.ts
+// ============================================================================
+
+/**
+ * One ranked destination in an overflow disposition draft.
+ * rank 1 = most preferred.
+ */
+export interface OverflowDestination {
+  rank: number;
+  type: 'MINI_PROCESSOR' | 'FOOD_BANK_DIRECT' | 'RETAIL';
+  destinationId: string;
+  destinationLabel: string;
+  lbs: number;
+  reason: string;
+}
+
+/**
+ * Draft overflow disposition for a lot that has no canning match or whose
+ * canning capacity is exceeded.
+ *
+ * Always a draft — never auto-executed.
+ * "Agent recommends. You decide."
+ */
+export interface OverflowDispositionDraft {
+  lotId: string;
+  overflowLbs: number;          // lbs that couldn't be canned
+  destinations: OverflowDestination[];
+  retailEligible: boolean;      // surplusPrice >= lot.marketPricePerLb * 0.85
+  reason: string;               // always present — operator reviews before acting
 }
