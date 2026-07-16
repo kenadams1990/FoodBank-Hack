@@ -79,7 +79,5 @@ wire the dashboard to real agent output; reconcile pitch docs with the widened s
 - **CI greened** (Sonnet subagent): two stacked config bugs — `pnpm/action-setup` `version: 11` conflicting
   with the `packageManager` pin (drop the workflow input when packageManager is pinned), and pnpm@11
   requiring Node ≥22.13 while CI ran Node 20 (bumped to 22). ci.yml only, 2 commits.
-- Team note: Pragnaya Priyadarshini stepped back from the project (posted in Slack `#social`).
-
 **Next up (pre-judging):** rehearse the demo flow (/intake → approvals → logistics → audit); update
 docs/DEMO_SCRIPT.md for the intake-first story; verify ACCFB §3 figures if time allows.

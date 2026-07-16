@@ -5,11 +5,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 TideLift AI — a hackathon entry (AISCO "AI Supply Chain Observatory" Hackathon, Food Banks + AI, judged
-July 17 2026 at Capgemini) for an "Operations Intelligence Hub": one multi-agent system over a food bank's
-**internal** supply chain — forecast inbound supply, score vendors, plan production, route deliveries by
-equity/need, and brief any team member in natural language. Every agent produces a draft/recommendation and
-never an execution — **"Agent recommends. You decide."** is a load-bearing product rule, not UI flavor; keep
-it in agent docstrings, `reason` fields, and dashboard copy.
+July 17 2026 at Capgemini): surplus seafood from local fishing vessels and aquafarms → cold-chain pickup →
+canning/processing → food banks. Every agent produces a draft/recommendation and never an execution —
+**"Agent recommends. You decide."** is a load-bearing product rule, not UI flavor; keep it in agent
+docstrings, `reason` fields, and dashboard copy.
+
+**Current build focus (per onsite hackathon advisors): the vessel → pickup → processing segment.** On-vessel
+CV catch metrics drive the purchase/dispatch decision before the truck rolls; dockside CV + thermal-cam QA
+sort catch into barcoded reusable bins; chem/microbiological QA runs before and after processing. This is
+`apps/agents/intake.ts` + the `/intake` dashboard page — the flagship of the current milestone. The
+downstream agents (scorer, procurement drafts, facility matching, delivery routing, approvals/audit) are
+built and green but secondary to this segment.
 
 **The project targets a specific, named food bank: Alameda County Community Food Bank (ACCFB).** One of the
 hackathon judges, Daniel Rodriguez, is ACCFB's own Director of Warehouse & Transportation Operations — the
@@ -17,14 +23,10 @@ organizers explicitly reward solutions built for a specific food bank with a qua
 a generic pitch. `docs/ACCFB_NUMBERS.md` tracks what's sourced (from the official AISCO challenge doc) vs.
 still-to-verify (from accfb.org) — don't present unverified figures as confirmed.
 
-**Surplus local-fishery catch → shelf-stable canning is one supported inbound-supply stream, not the whole
-product.** The hub's shared types (`packages/shared/src/types.ts`) now model all 7 hackathon themes
-(forecast, procurement, production/repack, equity routing, agency need, NL briefing); fishery/canning
-(`SurplusAlert`/`CanningJob`) is a first-class but optional stream the forecast/procure agents can handle.
-Don't re-narrow the pitch back down to "canned fish" — that was an earlier, narrower framing this repo has
-moved past. See `docs/PITCH.md`, `docs/ARCHITECTURE.md`, `docs/DEMO_SCRIPT.md`, and the 3 files at repo root
-(`AISCO Hackathon Deck 2026 - SHARE.pdf`, `Alameda County Food Bank - Hackathon Challenge Themes.docx`,
-`Alameda County Food Bank - The Build List.docx`) for the judging criteria and theme list driving scope.
+**This repo is public with investors and judges reading it.** Everything committed — issues, commit messages,
+TASKS.md, docs — must read as outward-facing and professional: no internal team/personnel notes, no
+process drama. Scope changes are framed as deliberate roadmap focus. See `README.md`, `docs/PITCH.md`,
+`docs/DEMO_SCRIPT.md`, and the 3 organizer files at repo root for the judging criteria driving scope.
 
 ## Repo layout & current state
 
@@ -69,31 +71,33 @@ silently broken until this was caught by actually running `pnpm build` — alway
 ## Architecture — agent pipeline (`apps/agents/`)
 
 ```
-Inbound supply → forecast.ts (SurplusAlert + buy signal; Theme 1 "See It Coming")
-              → procure.ts (RFQ draft, discount negotiation; Theme 1)
-              → canning.ts (co-pack slot booking + staging plan → CanningJob; Theme 3 "Production Is Manufacturing")
-              → route.ts  (equity-aware delivery plan; Theme 4 "Equity With a Truck Attached" — the flagship agent)
-              → analyst.ts (NL brief wrapping the pipeline; Theme 6 "Every Team Member an Analyst")
+Vessel/farm catch log → intake.ts   (on-vessel CV → dispatch draft; dockside sort into barcoded bins,
+                                     thermal QA flags > 4°C — the current-milestone flagship)
+Surplus lot           → scorer.ts   (0–100 opportunity score: discount/urgency/size/demand, with rationale)
+                      → procure.ts  (counter-offer draft vs open quotes, 60%-of-market floor)
+                      → canning.ts  (ranked facility matches: species compat, slots, certs, cost)
+                      → route.ts    (planDelivery: case allocation across food banks;
+                                     planEquityDelivery/replanAfterDrop: lbs-level equity routing)
+                      → analyst.ts  (NL operations brief)
+pipeline.ts orchestrates score → procure → canning → delivery, emitting a PENDING Approval per step
+(approvals.ts) — nothing executes without an operator; every resolution is written to the audit log.
 ```
 
-All agents import types/mock data from `@tidelift/shared` (the workspace package, `packages/shared/src/
-index.ts` barrel — import from `'@tidelift/shared'`, not deep relative paths).
+All agents import types/mock data from `@tidelift/shared` (the workspace package barrel — import from
+`'@tidelift/shared'`, not deep relative paths). Every agent output carries a human-readable `reason`/
+`rationale` — preserve that pattern in anything new. Weights and thresholds (urgency blend in route.ts,
+score bands in scorer.ts, 4°C cold-chain max in intake.ts) are documented, deliberate defaults — not tuned
+against real ACCFB data yet.
 
-**`route.ts` is the most developed agent and the reference implementation for the others.** It exports
-`planEquityDelivery` (blended urgency score: 0.5 protein-gap + 0.3 perishability + 0.2 access-window
-tightness — documented, deliberate defaults, *not* tuned against real ACCFB data yet) and `replanAfterDrop`
-(Theme 4's "rebuild the day in minutes when a truck goes down or an agency cancels"). Every row carries a
-`reason` string and a `driverLoadNote` that's difficulty-aware, not a raw stop count — mirror this pattern
-(quantified `reason` + human-in-the-loop framing) when building out `forecast.ts`/`procure.ts`/`canning.ts`/
-`analyst.ts` further, which are still on the older, simpler fishery-specific implementation.
-
-`mockAgencyNeeds` in `route.ts` models 6 realistic Alameda County neighborhoods (East Oakland, Fruitvale, San
-Leandro, Hayward, Newark, West Oakland) with a mix of perishable and non-perishable capacity — keep new mock
-data geographically/operationally consistent with ACCFB's actual service area per `docs/ACCFB_NUMBERS.md`.
+Mock data (`packages/shared/src/mockData.ts`) models a realistic Pacific-coast scenario (5 suppliers, 8
+lots, 3 facilities, 6 food banks incl. ACCFB) — keep new mock data geographically/operationally consistent
+with ACCFB's service area per `docs/ACCFB_NUMBERS.md`.
 
 ## Dashboard (`apps/web/`)
 
-Routes: `/` and `/mock-run`. Components in `src/lib/components/`: `AgentBanner`, `AgentStatusPanel`,
-`SurplusCard`, `DeliveryPlanTable`. Currently wired to `src/lib/mockSurplusFeed.ts`, a self-contained mock
-implementation predating `@tidelift/shared` — `src/lib/hubTypes.ts` is the (currently unused) bridge for
-migrating the dashboard onto real agent types.
+SvelteKit 4 + Tailwind. Pages: `/` (dashboard), `/intake` (vessel intake — demo centerpiece), `/logistics`
+(lot kanban), `/partners`, `/audit` (approval/audit trail), `/lots/[id]`, `/mock-run` (scripted demo).
+API routes under `src/routes/api/` (lots, approvals, shipments, recommendations, intake, audit) serve from
+`src/lib/store.ts`, an in-memory store seeded from `@tidelift/shared` mock data. The web app reaches agent
+logic through the `$agents` vite alias (see `vite.config.js`) and shared types through `$shared` — API
+routes call agents server-side; pages fetch from the API.
