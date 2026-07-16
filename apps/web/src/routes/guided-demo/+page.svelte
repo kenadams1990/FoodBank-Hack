@@ -158,22 +158,22 @@
 </div>
 
 <!-- Impact tiles -->
-<div class="sticky top-16 z-10 bg-gray-50/95 backdrop-blur-sm pt-1 pb-4 -mx-2 px-2">
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="bg-white rounded-xl border border-gray-100 p-4 text-center">
-      <p class="text-2xl mb-1">🐟</p>
-      <p class="text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($lbsTile).toLocaleString()} lbs</p>
-      <p class="text-xs text-gray-400 mt-1">Recovered / diverted from waste — dockside-QA-cleared</p>
+<div class="sticky top-14 sm:top-16 z-10 bg-gray-50/95 backdrop-blur-sm pt-1 pb-3 sm:pb-4 -mx-2 px-2">
+  <div class="grid grid-cols-3 gap-2 sm:gap-4">
+    <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
+      <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">🐟</p>
+      <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($lbsTile).toLocaleString()} lbs</p>
+      <p class="hidden sm:block text-xs text-gray-400 mt-1">Recovered / diverted from waste — dockside-QA-cleared</p>
     </div>
-    <div class="bg-white rounded-xl border border-gray-100 p-4 text-center">
-      <p class="text-2xl mb-1">💵</p>
-      <p class="text-2xl font-extrabold text-brand-dark tabular-nums">${Math.round($dollarTile).toLocaleString()}</p>
-      <p class="text-xs text-gray-400 mt-1">Saved vs. market — agent's counter-offer vs. {data.lot.species} market rate</p>
+    <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
+      <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">💵</p>
+      <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">${Math.round($dollarTile).toLocaleString()}</p>
+      <p class="hidden sm:block text-xs text-gray-400 mt-1">Saved vs. market — agent's counter-offer vs. {data.lot.species} market rate</p>
     </div>
-    <div class="bg-white rounded-xl border border-gray-100 p-4 text-center">
-      <p class="text-2xl mb-1">🍽️</p>
-      <p class="text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($mealsTile).toLocaleString()}</p>
-      <p class="text-xs text-gray-400 mt-1">Meals recovered — Feeding America basis, 1.2 lbs/meal</p>
+    <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
+      <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">🍽️</p>
+      <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($mealsTile).toLocaleString()}</p>
+      <p class="hidden sm:block text-xs text-gray-400 mt-1">Meals recovered — Feeding America basis, 1.2 lbs/meal</p>
     </div>
   </div>
 </div>
@@ -200,11 +200,11 @@
           <div transition:fade={{ duration: 250 }} class="bg-white rounded-xl border border-gray-100 p-5">
             <div class="flex items-center gap-2 mb-3">
               <span class="text-xl">{step.icon}</span>
-              <h2 class="font-semibold text-brand-dark">{step.label}</h2>
+              <h2 class="font-semibold text-brand-dark text-sm sm:text-base truncate">{step.label}</h2>
               {#if state === 'active'}
                 <span class="text-xs text-amber-600 animate-pulse ml-1">● Running</span>
               {/if}
-              <span class="text-xs text-gray-300 font-mono ml-auto">{step.agent}</span>
+              <span class="hidden sm:inline text-xs text-gray-300 font-mono ml-auto">{step.agent}</span>
             </div>
 
             {#if step.id === 1}
