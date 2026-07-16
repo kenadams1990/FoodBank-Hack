@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { tweened } from 'svelte/motion';
   import { cubicOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -22,9 +22,10 @@
     { id: 9, icon: '🔀', label: 'Overflow Disposition', agent: 'overflow:draftOverflowDisposition' },
   ];
 
-  let currentStep = 0; // 0 = nothing revealed yet
+  let currentStep = 0;
   let playing = false;
   let timer: ReturnType<typeof setInterval> | undefined;
+  let tilesOpen = true;
 
   const lbsTile = tweened(0, { duration: 900, easing: cubicOut });
   const dollarTile = tweened(0, { duration: 900, easing: cubicOut });
@@ -158,24 +159,38 @@
 </div>
 
 <!-- Impact tiles -->
-<div class="sticky top-14 sm:top-16 z-10 bg-gray-50/95 backdrop-blur-sm pt-1 pb-3 sm:pb-4 -mx-2 px-2">
-  <div class="grid grid-cols-3 gap-2 sm:gap-4">
-    <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
-      <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">🐟</p>
-      <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($lbsTile).toLocaleString()} lbs</p>
-      <p class="hidden sm:block text-xs text-gray-400 mt-1">Recovered / diverted from waste — dockside-QA-cleared</p>
+<div class="sticky top-14 sm:top-16 z-10 bg-gray-50/95 backdrop-blur-sm pt-1 pb-1 -mx-2 px-2">
+  <!-- Toggle bar: always visible -->
+  <button
+    on:click={() => (tilesOpen = !tilesOpen)}
+    class="sm:hidden w-full flex items-center justify-between px-1 py-1.5 mb-1 text-xs text-gray-400 hover:text-gray-600 transition"
+    aria-label={tilesOpen ? 'Hide impact stats' : 'Show impact stats'}
+  >
+    <span class="font-medium tracking-wide uppercase">Impact stats</span>
+    <span class="text-base leading-none">{tilesOpen ? '▲' : '▼'}</span>
+  </button>
+
+  {#if tilesOpen}
+    <div transition:slide={{ duration: 180 }} class="pb-2 sm:pb-4">
+      <div class="grid grid-cols-3 gap-2 sm:gap-4">
+        <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
+          <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">🐟</p>
+          <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($lbsTile).toLocaleString()} lbs</p>
+          <p class="hidden sm:block text-xs text-gray-400 mt-1">Recovered / diverted from waste — dockside-QA-cleared</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
+          <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">💵</p>
+          <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">${Math.round($dollarTile).toLocaleString()}</p>
+          <p class="hidden sm:block text-xs text-gray-400 mt-1">Saved vs. market — agent's counter-offer vs. {data.lot.species} market rate</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
+          <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">🍽️</p>
+          <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($mealsTile).toLocaleString()}</p>
+          <p class="hidden sm:block text-xs text-gray-400 mt-1">Meals recovered — Feeding America basis, 1.2 lbs/meal</p>
+        </div>
+      </div>
     </div>
-    <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
-      <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">💵</p>
-      <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">${Math.round($dollarTile).toLocaleString()}</p>
-      <p class="hidden sm:block text-xs text-gray-400 mt-1">Saved vs. market — agent's counter-offer vs. {data.lot.species} market rate</p>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-100 p-2 sm:p-4 text-center">
-      <p class="text-lg sm:text-2xl mb-0.5 sm:mb-1">🍽️</p>
-      <p class="text-base sm:text-2xl font-extrabold text-brand-dark tabular-nums">{Math.round($mealsTile).toLocaleString()}</p>
-      <p class="hidden sm:block text-xs text-gray-400 mt-1">Meals recovered — Feeding America basis, 1.2 lbs/meal</p>
-    </div>
-  </div>
+  {/if}
 </div>
 
 <!-- Step timeline -->
@@ -384,7 +399,6 @@
                 <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap">Requires approval</span>
               </div>
 
-              <!-- Retail eligibility pill -->
               <div class="flex items-center gap-2 mb-4">
                 <span class="text-xs font-semibold px-2 py-1 rounded-full
                   {data.overflowDraft.retailEligible ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
@@ -398,7 +412,6 @@
               {#if data.overflowDraft.destinations.length === 0}
                 <p class="text-sm text-teal-600 font-medium">All lbs absorbed by canning — no overflow destinations needed.</p>
               {:else}
-                <!-- Ranked destination cards -->
                 <div class="space-y-3 mb-4">
                   {#each data.overflowDraft.destinations as dest}
                     <div class="bg-gray-50 rounded-lg p-3">
@@ -419,7 +432,6 @@
                 </div>
               {/if}
 
-              <!-- Draft reason footer -->
               <p class="text-xs text-gray-400 italic">{data.overflowDraft.reason}</p>
             {/if}
           </div>
