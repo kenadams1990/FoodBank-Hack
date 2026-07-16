@@ -106,12 +106,31 @@ function buildReason(s: ScoredNeed, allocatedLbs: number, perishablePriority: bo
  * (protein gap, perishability, access-window tightness) — not by miles or
  * raw need alone. Greedy: most urgent agency first, capped at availableLbs.
  * Draft only — see `reason` on every row (human-in-the-loop).
+ *
+ * Task 2: agencies where currentlyAccepting === false are skipped before
+ * scoring. Absent field defaults to true (conservative).
  */
 export function planEquityDelivery(
   availableLbs: number,
-  needs: AgencyNeed[]
+  needs: AgencyNeed[],
+  foodBanks?: FoodBank[]
 ): DeliveryPlanRow[] {
-  const scored = scoreNeeds(needs).sort((a, b) => b.urgencyScore - a.urgencyScore);
+  // Build a lookup map from agencyId → FoodBank if provided, so we can check
+  // the currentlyAccepting flag without requiring callers that don't have
+  // FoodBank objects to pass them.
+  const fbMap = new Map<string, FoodBank>();
+  if (foodBanks) {
+    for (const fb of foodBanks) fbMap.set(fb.id, fb);
+  }
+
+  // Filter out agencies that are explicitly not accepting.
+  // currentlyAccepting absent = true (conservative default).
+  const activeNeeds = needs.filter((n) => {
+    const fb = fbMap.get(n.agencyId);
+    return fb ? fb.currentlyAccepting !== false : true;
+  });
+
+  const scored = scoreNeeds(activeNeeds).sort((a, b) => b.urgencyScore - a.urgencyScore);
 
   const rows: DeliveryPlanRow[] = [];
   let remaining = availableLbs;
@@ -176,6 +195,8 @@ const CANS_PER_CASE = 24;
  * Allocates finished cases across food banks, largest monthly demand first,
  * each capped at its own monthly demand. Draft only — released by a human
  * via a DELIVERY_RELEASE approval.
+ *
+ * Task 2: food banks where currentlyAccepting === false are skipped.
  */
 export function planDelivery(
   estimatedCans: number,
@@ -183,7 +204,9 @@ export function planDelivery(
   facility: CanningFacility
 ): ShipmentDraft[] {
   const totalCases = Math.floor(estimatedCans / CANS_PER_CASE);
-  const sorted = [...foodBanks].sort(
+  // Skip food banks that are explicitly not accepting.
+  const accepting = foodBanks.filter((fb) => fb.currentlyAccepting !== false);
+  const sorted = [...accepting].sort(
     (a, b) => b.monthlyDemandCases - a.monthlyDemandCases
   );
 
