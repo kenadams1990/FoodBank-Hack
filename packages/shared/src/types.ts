@@ -103,7 +103,9 @@ export interface AgencyNeed {
   proteinGapLbs: number;
   accessWindows: string[];
   dietaryPrefs: string[];
-  perishableCapacity?: number; // lbs of cold storage the agency can accept
+  perishableCapacity?: number;          // lbs of cold storage the agency can accept
+  coldStorageAvailableUntil?: string;   // ISO timestamp — window closes when elapsed;
+                                        // absent = window assumed open (conservative)
 }
 
 // ---------------------------------------------------------------------------
@@ -127,10 +129,6 @@ export interface HubState {
 
 // ============================================================================
 // Surplus fishery catch — one supported inbound supply stream.
-// The hub ingests many supply sources (donated produce, purchased food, and
-// surplus local Bay Area catch among them). Surplus catch — and its optional
-// shelf-stable co-pack path — is one first-class stream the forecast/procure
-// agents can handle, not a separate product. Kept and supported.
 // ============================================================================
 export type SurplusAlert = {
   fisheryId: string;
@@ -151,7 +149,6 @@ export type CanningJob = {
 
 // ============================================================================
 // Lot lifecycle — suppliers, surplus lots, facilities, food banks, quotes.
-// Used by the scorer/procure/canning/pipeline agents and the dashboard store.
 // ============================================================================
 
 export type LotStatus =
@@ -182,14 +179,15 @@ export interface SurplusLot {
   species: string;
   lbs: number;
   harvestDate: string; // ISO date
-  expiryDate: string; // ISO date
+  expiryDate: string;  // ISO date
   pricePerLb: number;
   marketPricePerLb: number;
   proposedDiscountPct: number;
   landingLocation: string;
   status: LotStatus;
-  score?: number; // 0..100, set once the scorer agent has run
+  score?: number;      // 0..100, set once the scorer agent has run
   notes?: string;
+  tempC?: number;      // surface temp reading from dock intake, °C
 }
 
 export interface FacilitySlot {
@@ -233,8 +231,7 @@ export interface Quote {
 }
 
 // ============================================================================
-// Human-in-the-loop approvals + audit trail. Every agent draft becomes an
-// Approval; nothing changes state until an operator resolves it.
+// Human-in-the-loop approvals + audit trail.
 // ============================================================================
 
 export type ApprovalType = 'PROCUREMENT' | 'FACILITY_BOOKING' | 'DELIVERY_RELEASE';
@@ -244,11 +241,11 @@ export interface Approval {
   id: string;
   approvalType: ApprovalType;
   status: ApprovalStatus;
-  entityId: string; // usually a lot id
-  operatorId: string; // empty until resolved
+  entityId: string;
+  operatorId: string;
   draftPayload: unknown;
   notes?: string;
-  createdAt: string; // ISO timestamp
+  createdAt: string;   // ISO timestamp
   resolvedAt?: string; // ISO timestamp
 }
 
@@ -266,21 +263,18 @@ export interface AuditEvent {
   entityType: 'LOT' | 'APPROVAL' | 'SHIPMENT';
   entityId: string;
   action: string;
-  actor: string; // e.g. 'agent:scorer', 'operator:ken', 'system'
+  actor: string;
   beforeState?: unknown;
   afterState?: unknown;
   timestamp: string; // ISO timestamp
 }
 
 // ============================================================================
-// Vessel → pickup → processing intake (current build focus, per onsite
-// advisors). CV runs twice: on-vessel at harvest (drives the purchase/
-// dispatch decision before the truck rolls) and dockside at transfer into
-// barcoded containers. QA/QC runs before AND after processing.
+// Vessel → pickup → processing intake
 // ============================================================================
 
 export interface CVEstimate {
-  count: number; // individual fish/shellfish detected
+  count: number;
   avgWeightLbs: number;
   sizeGrade: 'S' | 'M' | 'L' | 'XL';
   confidence: number; // 0..1
@@ -292,29 +286,29 @@ export interface VesselCatchLog {
   vesselType: 'wild-catch' | 'farm';
   species: string;
   estimatedLbs: number;
-  cvEstimate: CVEstimate; // from on-vessel/at-harvest computer vision
-  location: string; // dock / landing location
-  loggedAt: string; // ISO timestamp
-  pickupWindow: string; // e.g. "2026-07-16 14:00-16:00"
+  cvEstimate: CVEstimate;
+  location: string;
+  loggedAt: string;      // ISO timestamp
+  pickupWindow: string;
 }
 
 export interface PickupDispatch {
   catchLogId: string;
   recommend: boolean;
-  coldTransportUnit: string; // e.g. "CT-04 (reefer, 2°C)"
+  coldTransportUnit: string;
   arrivalEta: string;
-  reason: string; // cites the on-vessel CV metrics driving the decision
+  reason: string;
 }
 
 export interface SortedContainer {
-  containerId: string; // barcoded reusable bin
+  containerId: string;
   catchLogId: string;
   species: string;
   sizeGrade: 'S' | 'M' | 'L' | 'XL';
   lbs: number;
-  tempC: number; // thermal-cam surface reading at sort
+  tempC: number;
   qaStatus: 'PASS' | 'FLAG';
-  reason: string; // why it passed or was flagged
+  reason: string;
 }
 
 export interface DockIntakeResult {
@@ -323,5 +317,40 @@ export interface DockIntakeResult {
   containers: SortedContainer[];
   totalLbsAccepted: number;
   flaggedCount: number;
-  summary: string; // draft summary — operator confirms before processing handoff
+  summary: string;
+}
+
+// ============================================================================
+// Perishable Rescue & Redistribution — output types for perishable.ts
+// ============================================================================
+
+/** One urgent lot summary surfaced in a rescue draft. */
+export interface UrgentLotSummary {
+  lotId: string;
+  species: string;
+  lbs: number;
+  expiresAt: string;       // ISO date
+  hoursRemaining: number;  // rounded to 1 decimal
+}
+
+/** One cold-transport unit assignment in a rescue draft. */
+export interface ColdTransportAssignment {
+  lotId: string;
+  coldTransportUnit: string;       // e.g. "CT-04 (reefer, 2°C)"
+  assignedAgencyId: string;
+  pickupWindowSuggestion: string;  // derived from agency's first accessWindow
+}
+
+/**
+ * Draft output of draftPerishableRescue().
+ * Always a draft — operator must confirm before any transport is dispatched.
+ * "Agent recommends. You decide."
+ */
+export interface PerishableRescueDraft {
+  generatedAt: string;                          // ISO timestamp
+  urgentLots: UrgentLotSummary[];
+  deliveryRows: DeliveryPlanRow[];              // from planEquityDelivery()
+  coldTransportAssignments: ColdTransportAssignment[];
+  unroutableLbs: number;                        // lbs with no capable agency in window
+  reason: string;                               // always present — operator confirms
 }
