@@ -1,0 +1,14 @@
+{
+  "name": "tidelift-foodbank-hack",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Wire apps/web SvelteKit app here'",
+    "build": "echo 'Wire build here'",
+    "typecheck": "tsc --noEmit"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
