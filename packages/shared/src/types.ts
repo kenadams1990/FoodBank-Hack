@@ -324,33 +324,81 @@ export interface DockIntakeResult {
 // Perishable Rescue & Redistribution — output types for perishable.ts
 // ============================================================================
 
-/** One urgent lot summary surfaced in a rescue draft. */
 export interface UrgentLotSummary {
   lotId: string;
   species: string;
   lbs: number;
-  expiresAt: string;       // ISO date
-  hoursRemaining: number;  // rounded to 1 decimal
+  expiresAt: string;
+  hoursRemaining: number;
 }
 
-/** One cold-transport unit assignment in a rescue draft. */
 export interface ColdTransportAssignment {
   lotId: string;
-  coldTransportUnit: string;       // e.g. "CT-04 (reefer, 2°C)"
+  coldTransportUnit: string;
   assignedAgencyId: string;
-  pickupWindowSuggestion: string;  // derived from agency's first accessWindow
+  pickupWindowSuggestion: string;
+}
+
+export interface PerishableRescueDraft {
+  generatedAt: string;
+  urgentLots: UrgentLotSummary[];
+  deliveryRows: DeliveryPlanRow[];
+  coldTransportAssignments: ColdTransportAssignment[];
+  unroutableLbs: number;
+  reason: string;
+}
+
+// ============================================================================
+// Replenishment List Agent — output types for replenish.ts
+// ============================================================================
+
+/** Current on-hand inventory for one item at one food bank. */
+export interface FoodBankInventory {
+  foodBankId: string;
+  item: string;              // species or product type, e.g. 'salmon', 'tuna'
+  onHandLbs: number;
+  avgWeeklyUsageLbs: number;
+  lastReceivedDate: string;  // ISO date
+  seasonalFactor?: number;   // override for current-month demand multiplier;
+                             // absent = looked up from SEASONAL_FACTORS table
+}
+
+/** An upcoming distribution event and its per-item draw-down. */
+export interface DistributionEvent {
+  foodBankId: string;
+  date: string; // ISO date
+  label: string; // e.g. "July Week 3 Distribution"
+  itemAllocations: Array<{
+    item: string;
+    allocatedLbs: number;
+  }>;
+}
+
+/** One line item in a replenishment list draft. */
+export interface ReplenishmentLineItem {
+  item: string;
+  onHandLbs: number;
+  weeksOfStockRemaining: number;   // projected post-distribution, seasonal-adjusted
+  suggestedLbs: number;            // lbs needed to restore weeksAhead buffer
+  shortageScore: number;           // 0..1, higher = more urgent
+  sourceType: 'SURPLUS_LOT' | 'LATERAL_TRANSFER' | 'SUPPLIER_ORDER';
+  sourceId: string;                // lotId | foodBankId | 'supplier:<item>'
+  sourceLabel: string;             // human-readable source description
+  reason: string;                  // always present — operator confirms
 }
 
 /**
- * Draft output of draftPerishableRescue().
- * Always a draft — operator must confirm before any transport is dispatched.
+ * Draft replenishment list for one food bank.
+ * Always a draft — operator must approve before any order is placed.
  * "Agent recommends. You decide."
  */
-export interface PerishableRescueDraft {
-  generatedAt: string;                          // ISO timestamp
-  urgentLots: UrgentLotSummary[];
-  deliveryRows: DeliveryPlanRow[];              // from planEquityDelivery()
-  coldTransportAssignments: ColdTransportAssignment[];
-  unroutableLbs: number;                        // lbs with no capable agency in window
-  reason: string;                               // always present — operator confirms
+export interface ReplenishmentList {
+  generatedAt: string;
+  foodBankId: string;
+  foodBankName: string;
+  planningHorizonWeeks: number;
+  lineItems: ReplenishmentLineItem[]; // sorted by shortageScore desc
+  criticalCount: number;              // items at 0 weeks stock
+  totalSuggestedLbs: number;
+  reason: string;                     // always present
 }

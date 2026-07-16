@@ -6,6 +6,7 @@
     { href: '/',            label: 'Dashboard' },
     { href: '/intake',      label: 'Intake' },
     { href: '/logistics',   label: 'Logistics' },
+    { href: '/replenish',   label: 'Replenish' },
     { href: '/partners',    label: 'Partners' },
     { href: '/audit',       label: 'Audit' },
     { href: '/guided-demo', label: 'Guided Demo' },
@@ -21,7 +22,6 @@
 
       <!-- Wordmark + SVG mark -->
       <a href="/" class="flex items-center gap-2.5 shrink-0 group">
-        <!-- Inline SVG: stylised fish silhouette -->
         <svg
           width="22" height="16" viewBox="0 0 22 16" fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -35,12 +35,8 @@
           <circle cx="14.5" cy="7" r="1" fill="currentColor" />
           <path d="M2 8L0 5M2 8L0 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
         </svg>
-        <span
-          class="font-display font-extrabold text-white tracking-tight text-base"
-        >TIDELIFT</span>
-        <span
-          class="hidden sm:block text-[10px] font-mono text-brand/80 border border-brand/30 rounded px-1.5 py-0.5 leading-none uppercase tracking-wider"
-        >cold-chain ops</span>
+        <span class="font-display font-extrabold text-white tracking-tight text-base">TIDELIFT</span>
+        <span class="hidden sm:block text-[10px] font-mono text-brand/80 border border-brand/30 rounded px-1.5 py-0.5 leading-none uppercase tracking-wider">cold-chain ops</span>
       </a>
 
       <!-- Nav -->

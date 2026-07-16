@@ -2,10 +2,11 @@
 // Realistic Pacific Coast scenario: 5 suppliers, 8 lots, 3 facilities, 6 food banks
 
 import type {
-  Supplier, SurplusLot, CanningFacility, FoodBank, Quote, AuditEvent
+  Supplier, SurplusLot, CanningFacility, FoodBank, Quote, AuditEvent,
+  FoodBankInventory, DistributionEvent
 } from './types';
 
-// ── Suppliers ───────────────────────────────────────────────────────────
+// ── Suppliers ───────────────────────────────────────────────────────────────────────
 
 export const SUPPLIERS: Supplier[] = [
   {
@@ -65,7 +66,7 @@ export const SUPPLIERS: Supplier[] = [
   },
 ];
 
-// ── Surplus Lots ──────────────────────────────────────────────────────────
+// ── Surplus Lots ──────────────────────────────────────────────────────────────────────────
 
 export const SURPLUS_LOTS: SurplusLot[] = [
   {
@@ -180,7 +181,7 @@ export const SURPLUS_LOTS: SurplusLot[] = [
   },
 ];
 
-// ── Canning Facilities ──────────────────────────────────────────────────────
+// ── Canning Facilities ──────────────────────────────────────────────────────────────────────────
 
 export const CANNING_FACILITIES: CanningFacility[] = [
   {
@@ -226,7 +227,7 @@ export const CANNING_FACILITIES: CanningFacility[] = [
   },
 ];
 
-// ── Food Banks ───────────────────────────────────────────────────────────────
+// ── Food Banks ───────────────────────────────────────────────────────────────────────────────
 
 export const FOOD_BANKS: FoodBank[] = [
   {
@@ -297,7 +298,7 @@ export const FOOD_BANKS: FoodBank[] = [
   },
 ];
 
-// ── Quotes ──────────────────────────────────────────────────────────────────
+// ── Quotes ───────────────────────────────────────────────────────────────────────────────
 
 export const QUOTES: Quote[] = [
   { id: 'q-001', lotId: 'lot-001', supplierId: 'sup-001', pricePerLb: 1.44, moqLbs: 2000, validUntil: '2026-07-17', status: 'OPEN' },
@@ -314,7 +315,7 @@ export const QUOTES: Quote[] = [
   { id: 'q-012', lotId: 'lot-008', supplierId: 'sup-003', pricePerLb: 2.25, moqLbs: 1800, validUntil: '2026-07-14', status: 'ACCEPTED' },
 ];
 
-// ── Historical Audit Events ──────────────────────────────────────────────
+// ── Historical Audit Events ───────────────────────────────────────────────────────────────────
 
 export const AUDIT_EVENTS: AuditEvent[] = [
   {
@@ -354,10 +355,80 @@ export const AUDIT_EVENTS: AuditEvent[] = [
   },
 ];
 
-// ── Legacy export (keeps old imports working) ─────────────────────────────
+// ── Legacy export (keeps old imports working) ───────────────────────────────────────────────
 
 export const MOCK_SURPLUS_EVENTS = [
   { id: 'evt-001', fisheryId: 'monterey-001', species: 'Albacore Tuna', lbs: 4200, landingAt: 'Monterey Bay Fisheries, CA', landingDate: '2026-07-18', marketPricePerLb: 1.85, proposedDiscountPct: 22 },
   { id: 'evt-002', fisheryId: 'san-diego-003', species: 'Pacific Sardine', lbs: 8900, landingAt: 'San Diego Fish Market, CA', landingDate: '2026-07-20', marketPricePerLb: 0.65, proposedDiscountPct: 30 },
   { id: 'evt-003', fisheryId: 'bodega-bay-005', species: 'Dungeness Crab (broken pieces)', lbs: 1100, landingAt: 'Bodega Bay Harbor, CA', landingDate: '2026-07-19', marketPricePerLb: 3.20, proposedDiscountPct: 40 },
+];
+
+// ── Food Bank Inventory ──────────────────────────────────────────────────────────────────────────
+// Demo-scenario data — not sourced ACCFB figures. Designed to surface
+// interesting replenishment signals: salmon critically low at ACCFB (peak
+// season), sardine approaching threshold at SF-Marin, halibut fine everywhere.
+
+export const FOOD_BANK_INVENTORY: FoodBankInventory[] = [
+  // ── fb-001: Alameda County Community Food Bank ──
+  { foodBankId: 'fb-001', item: 'salmon',  onHandLbs: 320,  avgWeeklyUsageLbs: 420, lastReceivedDate: '2026-07-08' },
+  { foodBankId: 'fb-001', item: 'sardine', onHandLbs: 1800, avgWeeklyUsageLbs: 600, lastReceivedDate: '2026-07-10' },
+  { foodBankId: 'fb-001', item: 'tuna',    onHandLbs: 2400, avgWeeklyUsageLbs: 500, lastReceivedDate: '2026-07-12' },
+  { foodBankId: 'fb-001', item: 'halibut', onHandLbs: 900,  avgWeeklyUsageLbs: 200, lastReceivedDate: '2026-07-05' },
+
+  // ── fb-002: San Diego Food Bank ──
+  { foodBankId: 'fb-002', item: 'salmon',  onHandLbs: 1200, avgWeeklyUsageLbs: 480, lastReceivedDate: '2026-07-11' },
+  { foodBankId: 'fb-002', item: 'sardine', onHandLbs: 3400, avgWeeklyUsageLbs: 900, lastReceivedDate: '2026-07-14' },
+  { foodBankId: 'fb-002', item: 'tuna',    onHandLbs: 2800, avgWeeklyUsageLbs: 750, lastReceivedDate: '2026-07-13' },
+  { foodBankId: 'fb-002', item: 'halibut', onHandLbs: 500,  avgWeeklyUsageLbs: 150, lastReceivedDate: '2026-07-09' },
+
+  // ── fb-003: SF-Marin Food Bank ──
+  { foodBankId: 'fb-003', item: 'salmon',  onHandLbs: 680,  avgWeeklyUsageLbs: 300, lastReceivedDate: '2026-07-10' },
+  { foodBankId: 'fb-003', item: 'sardine', onHandLbs: 560,  avgWeeklyUsageLbs: 400, lastReceivedDate: '2026-07-07' },
+  { foodBankId: 'fb-003', item: 'tuna',    onHandLbs: 1100, avgWeeklyUsageLbs: 320, lastReceivedDate: '2026-07-12' },
+  { foodBankId: 'fb-003', item: 'halibut', onHandLbs: 420,  avgWeeklyUsageLbs: 120, lastReceivedDate: '2026-07-06' },
+];
+
+// ── Distribution Events ──────────────────────────────────────────────────────────────────────────
+// Upcoming distributions that draw down inventory before the next delivery.
+
+export const DISTRIBUTION_EVENTS: DistributionEvent[] = [
+  {
+    foodBankId: 'fb-001',
+    date: '2026-07-18',
+    label: 'ACCFB July Week 3 Distribution',
+    itemAllocations: [
+      { item: 'salmon',  allocatedLbs: 280 },
+      { item: 'sardine', allocatedLbs: 400 },
+      { item: 'tuna',    allocatedLbs: 350 },
+    ],
+  },
+  {
+    foodBankId: 'fb-001',
+    date: '2026-07-25',
+    label: 'ACCFB July Week 4 Distribution',
+    itemAllocations: [
+      { item: 'salmon',  allocatedLbs: 280 },
+      { item: 'sardine', allocatedLbs: 400 },
+      { item: 'tuna',    allocatedLbs: 350 },
+    ],
+  },
+  {
+    foodBankId: 'fb-002',
+    date: '2026-07-19',
+    label: 'SDFB July Week 3 Distribution',
+    itemAllocations: [
+      { item: 'salmon',  allocatedLbs: 400 },
+      { item: 'sardine', allocatedLbs: 700 },
+      { item: 'tuna',    allocatedLbs: 600 },
+    ],
+  },
+  {
+    foodBankId: 'fb-003',
+    date: '2026-07-21',
+    label: 'SF-Marin July Week 3 Distribution',
+    itemAllocations: [
+      { item: 'sardine', allocatedLbs: 300 },
+      { item: 'tuna',    allocatedLbs: 250 },
+    ],
+  },
 ];
