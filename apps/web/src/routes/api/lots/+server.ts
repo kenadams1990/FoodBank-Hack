@@ -1,14 +1,15 @@
 // GET /api/lots — list surplus lots with optional filters
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { db } from '$lib/store';
+import { getDb } from '$lib/store';
 import { LotFilterSchema } from '$lib/validation';
 
-export const GET: RequestHandler = ({ url }) => {
+export const GET: RequestHandler = async ({ url, platform }) => {
+  const db = getDb(platform);
   const params = Object.fromEntries(url.searchParams);
   const filter = LotFilterSchema.safeParse(params);
 
-  let lots = db.lots.findAll();
+  let lots = await db.lots.findAll();
 
   if (filter.success) {
     const { species, status, minScore, maxScore } = filter.data;

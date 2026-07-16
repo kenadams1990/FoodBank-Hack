@@ -1,11 +1,12 @@
 // GET /api/shipments — logistics board data
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { db } from '$lib/store';
+import { getDb } from '$lib/store';
 
-export const GET: RequestHandler = () => {
-  const shipments = db.shipments.findAll();
-  const lots = db.lots.findAll();
+export const GET: RequestHandler = async ({ platform }) => {
+  const db = getDb(platform);
+  const shipments = await db.shipments.findAll();
+  const lots = await db.lots.findAll();
 
   // Group lots by kanban column
   const kanban = {
