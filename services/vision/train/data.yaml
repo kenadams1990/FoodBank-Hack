@@ -1,0 +1,18 @@
+# YOLO dataset config for TideLift catch detection.
+#
+# If you download from Roboflow, it SHIPS this file for you — use theirs and
+# skip editing this. This template is for a single-class ('fish') dataset you
+# assemble yourself.
+#
+# `path` is the dataset root; train/val are image folders (YOLO expects a
+# sibling labels/ folder with one .txt per image: `class cx cy w h`, normalized).
+
+path: ./dataset
+train: images/train
+val: images/val
+
+# Single-class: detect fish → count + size; species comes from the catch log
+# (or a separate species step). For a multi-class dataset, list the real species
+# here (0: salmon, 1: sardine, ...) and the mapper will use the detected class.
+names:
+  0: fish
