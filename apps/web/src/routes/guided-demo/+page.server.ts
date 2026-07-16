@@ -18,6 +18,7 @@ import { draftProcurement } from '$agents/procure';
 import { matchFacilities } from '$agents/canning';
 import { planEquityDelivery } from '$agents/route';
 import { createApprovalRequest, approveAction } from '$agents/approvals';
+import { draftOverflowDisposition } from '$agents/overflow';
 import { SURPLUS_LOTS, CANNING_FACILITIES, FOOD_BANKS, QUOTES } from '$shared/mockData';
 import type { AgencyNeed } from '$shared/types';
 
@@ -80,11 +81,9 @@ export const load: PageServerLoad = () => {
   const deliveryPlan = planEquityDelivery(dockResult.totalLbsAccepted, [accfbNeed, ...comparisonNeeds]);
   const accfbDelivery = deliveryPlan.find((row) => row.agency === accfb.id)!;
 
-  // Step 7 — operator approval, captured in the audit trail.
-  // Uses the real approvals.ts state machine (same module apps/agents
-  // exposes to the rest of the hub) — not the persistent KV-backed dashboard
-  // store, so replaying this demo never mutates the live audit log judges
-  // can inspect on /audit.
+  // Step 7 — perishable rescue (Step 8 in prior numbering is operator approval —
+  // kept as Step 7 in this demo to match the existing STEPS array; approval
+  // is rendered in the final panel).
   const approvalRequest = createApprovalRequest(
     'PROCUREMENT',
     lot.id,
@@ -95,6 +94,16 @@ export const load: PageServerLoad = () => {
     approvalRequest.id,
     'operator:demo',
     'Approved live during the guided walkthrough — counter-offer within the 60%-of-market floor.'
+  );
+
+  // Step 9 — overflow disposition
+  // lot-003 is salmon, 2,100 lbs. matchFacilities returned canningMatches above.
+  // Use lot.pricePerLb as the surplusPrice per spec.
+  const overflowDraft = draftOverflowDisposition(
+    lot,
+    canningMatches,
+    FOOD_BANKS,
+    lot.pricePerLb
   );
 
   return {
@@ -109,5 +118,6 @@ export const load: PageServerLoad = () => {
     accfb,
     accfbDelivery,
     approval,
+    overflowDraft,
   };
 };

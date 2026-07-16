@@ -7,7 +7,7 @@
 
   export let data: PageData;
 
-  const TOTAL_STEPS = 7;
+  const TOTAL_STEPS = 9;
   const STEP_DURATION_MS = 3500;
 
   const STEPS = [
@@ -18,6 +18,8 @@
     { id: 5, icon: '🏭', label: 'Facility Match', agent: 'canning:matchFacilities' },
     { id: 6, icon: '🚚', label: 'Delivery Routing → ACCFB', agent: 'route:planEquityDelivery' },
     { id: 7, icon: '✅', label: 'Operator Approval', agent: 'approvals:approveAction' },
+    { id: 8, icon: '🆘', label: 'Perishable Rescue', agent: 'perishable:draftPerishableRescue' },
+    { id: 9, icon: '🔀', label: 'Overflow Disposition', agent: 'overflow:draftOverflowDisposition' },
   ];
 
   let currentStep = 0; // 0 = nothing revealed yet
@@ -363,6 +365,62 @@
                 </div>
               </div>
               <p class="text-xs text-gray-400 italic">Agent recommends. You decide. — every step above stays a draft until this click.</p>
+
+            {:else if step.id === 8}
+              <p class="text-sm text-gray-600 mb-3">
+                When lots are hours from expiry, the perishable rescue agent builds an emergency
+                routing plan — cold-transport assignments and agency delivery rows — so nothing
+                spoils waiting for the normal weekly run.
+              </p>
+              <p class="text-xs text-gray-400 italic">Perishable rescue output visible on the Cold-Chain Ops page. Lot {data.lot.id} flagged as urgent ({data.lot.notes}).</p>
+
+            {:else if step.id === 9}
+              <div class="flex items-center gap-2 mb-3">
+                <p class="text-sm text-gray-600 flex-1">
+                  When canning capacity is exceeded or no facility matches, the overflow agent
+                  ranks alternative destinations — community kitchen, direct food bank delivery,
+                  or retail — so no lbs are stranded.
+                </p>
+                <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap">Requires approval</span>
+              </div>
+
+              <!-- Retail eligibility pill -->
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-xs font-semibold px-2 py-1 rounded-full
+                  {data.overflowDraft.retailEligible ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
+                  Retail {data.overflowDraft.retailEligible ? 'eligible' : 'ineligible'}
+                </span>
+                <span class="text-xs text-gray-400">
+                  {data.overflowDraft.overflowLbs.toLocaleString()} lbs overflow · ${ data.lot.pricePerLb.toFixed(2)}/lb vs market ${data.lot.marketPricePerLb.toFixed(2)}/lb
+                </span>
+              </div>
+
+              {#if data.overflowDraft.destinations.length === 0}
+                <p class="text-sm text-teal-600 font-medium">All lbs absorbed by canning — no overflow destinations needed.</p>
+              {:else}
+                <!-- Ranked destination cards -->
+                <div class="space-y-3 mb-4">
+                  {#each data.overflowDraft.destinations as dest}
+                    <div class="bg-gray-50 rounded-lg p-3">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="w-6 h-6 rounded-full bg-brand-dark text-white text-xs font-bold flex items-center justify-center shrink-0">{dest.rank}</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full
+                          {dest.type === 'MINI_PROCESSOR' ? 'bg-purple-100 text-purple-700'
+                          : dest.type === 'FOOD_BANK_DIRECT' ? 'bg-teal-100 text-teal-700'
+                          : 'bg-orange-100 text-orange-700'}">
+                          {dest.type === 'MINI_PROCESSOR' ? 'Community Kitchen' : dest.type === 'FOOD_BANK_DIRECT' ? 'Food Bank Direct' : 'Retail'}
+                        </span>
+                        <span class="font-semibold text-brand-dark text-sm">{dest.destinationLabel}</span>
+                        <span class="ml-auto text-xs font-semibold text-gray-500 tabular-nums">{dest.lbs.toLocaleString()} lbs</span>
+                      </div>
+                      <p class="text-xs text-gray-400 pl-8">{dest.reason}</p>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+
+              <!-- Draft reason footer -->
+              <p class="text-xs text-gray-400 italic">{data.overflowDraft.reason}</p>
             {/if}
           </div>
         {:else}
