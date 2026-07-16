@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { MOCK_SURPLUS_EVENTS } from '@shared/mockData';
+import { MOCK_SURPLUS_EVENTS } from '@tidelift/shared';
 
-describe('MOCK_SURPLUS_EVENTS (via @shared alias)', () => {
-  it('resolves the @shared alias to packages/shared/src', () => {
+describe('MOCK_SURPLUS_EVENTS (via @tidelift/shared)', () => {
+  it('resolves the @tidelift/shared workspace package', () => {
     expect(Array.isArray(MOCK_SURPLUS_EVENTS)).toBe(true);
     expect(MOCK_SURPLUS_EVENTS.length).toBeGreaterThan(0);
   });

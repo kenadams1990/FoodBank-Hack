@@ -1,7 +1,7 @@
 // analyst.ts — NL Analyst Agent
 // Wraps all pipeline data into human-readable briefs for any team member.
 
-import type { SurplusAlert, CanningJob, AgencyNeed } from '../../packages/shared/src/types';
+import type { SurplusAlert, CanningJob, AgencyNeed } from '@tidelift/shared';
 
 export function generateBrief(params: {
   alert: SurplusAlert;

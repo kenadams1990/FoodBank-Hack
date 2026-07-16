@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { evaluateSurplus, mockSurplusFeed } from '../forecast';
-import type { SurplusAlert } from '@shared/types';
+import type { SurplusAlert } from '@tidelift/shared';
 
 describe('evaluateSurplus', () => {
   it('recommends a buy when discount savings and volume both clear the threshold', () => {

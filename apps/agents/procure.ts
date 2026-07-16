@@ -1,7 +1,7 @@
 // procure.ts — Procurement & Negotiation Agent
 // Generates RFQ drafts, scores vendors, proposes discount negotiation.
 
-import type { SurplusAlert, CanningJob } from '../../packages/shared/src/types';
+import type { SurplusAlert, CanningJob } from '@tidelift/shared';
 
 export type RFQDraft = {
   surplusId: string;

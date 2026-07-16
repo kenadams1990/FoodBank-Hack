@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateBrief } from '../analyst';
-import type { SurplusAlert, CanningJob } from '@shared/types';
+import type { SurplusAlert, CanningJob } from '@tidelift/shared';
 
 describe('generateBrief', () => {
   const alert: SurplusAlert = {

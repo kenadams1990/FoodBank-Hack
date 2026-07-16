@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateRFQ } from '../procure';
-import type { SurplusAlert } from '@shared/types';
+import type { SurplusAlert } from '@tidelift/shared';
 
 describe('generateRFQ', () => {
   const alert: SurplusAlert = {

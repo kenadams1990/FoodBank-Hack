@@ -8,7 +8,7 @@
 // Every row is a DRAFT recommendation, never an execution — "Agent recommends.
 // You decide." (human-in-the-loop is a product rule, see reason on every row).
 
-import type { AgencyNeed, DeliveryPlanRow } from '../../packages/shared/src/types';
+import type { AgencyNeed, DeliveryPlanRow } from '@tidelift/shared';
 
 // ---------------------------------------------------------------------------
 // Urgency scoring

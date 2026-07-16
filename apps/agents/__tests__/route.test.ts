@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { planEquityDelivery, replanAfterDrop, mockAgencyNeeds } from '../route';
-import type { AgencyNeed } from '../../../packages/shared/src/types';
+import type { AgencyNeed } from '@tidelift/shared';
 
 const bigGapShelfStable: AgencyNeed = {
   agencyId: 'agency-big-gap',

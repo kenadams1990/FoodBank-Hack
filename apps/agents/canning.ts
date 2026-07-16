@@ -1,7 +1,7 @@
 // canning.ts — Canning / Co-Pack Agent
 // Books co-packer capacity and generates a staging plan.
 
-import type { CanningJob } from '../../packages/shared/src/types';
+import type { CanningJob } from '@tidelift/shared';
 
 export type CoPackerSlot = {
   coPackerId: string;

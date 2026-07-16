@@ -2,3 +2,16 @@ node_modules
 .env
 .env.*
 !.env.example
+
+# Build output
+.svelte-kit
+/dist
+build
+
+# Package manager — pnpm is the workspace tool (see pnpm-workspace.yaml)
+package-lock.json
+yarn.lock
+
+# OS / editor
+.DS_Store
+*.log

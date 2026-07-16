@@ -6,6 +6,9 @@
   "scripts": {
     "test": "vitest run __tests__"
   },
+  "dependencies": {
+    "@tidelift/shared": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"

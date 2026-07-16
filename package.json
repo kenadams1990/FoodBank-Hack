@@ -2,11 +2,13 @@
   "name": "foodbank-hack",
   "version": "0.0.1",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "packageManager": "pnpm@11.0.9",
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
-    "preview": "pnpm --filter web preview"
+    "preview": "pnpm --filter web preview",
+    "check": "pnpm --filter web check",
+    "test": "pnpm --filter agents test"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

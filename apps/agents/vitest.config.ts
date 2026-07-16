@@ -15,7 +15,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@shared': path.resolve(__dirname, '../../packages/shared/src'),
+      // Resolve the workspace package to its TS source so vitest transforms it.
+      '@tidelift/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
 });

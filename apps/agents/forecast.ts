@@ -1,7 +1,7 @@
 // forecast.ts — Surplus Forecast Agent
 // Consumes fishery landing data and predicts surplus windows + buy signals.
 
-import type { SurplusAlert } from '../../packages/shared/src/types';
+import type { SurplusAlert } from '@tidelift/shared';
 
 /** Mock surplus feed — replace with real fishery API */
 export const mockSurplusFeed: SurplusAlert[] = [
