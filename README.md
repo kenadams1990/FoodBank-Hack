@@ -1,11 +1,11 @@
 # 🌊 TideLift AI
 
 > **Surplus local fisheries → shelf-stable canned seafood for food banks.**  
-> One multi-agent Operations Intelligence Hub that forecasts, negotiates, cans, and routes — while keeping humans in charge of relationships and trust.
+> A complete end-to-end AI agent platform that forecasts surplus, negotiates procurement discounts, owns the full canning logistics pipeline, and routes finished product to food banks — eliminating cold chain dependence from source to shelf.
 
 [![Hackathon](https://img.shields.io/badge/AISCO%20Hackathon-2026-blue?style=for-the-badge)](https://github.com/kenadams1990/FoodBank-Hack)
-[![Stack](https://img.shields.io/badge/Stack-SvelteKit%20%7C%20TypeScript%20%7C%20AI%20Agents-green?style=for-the-badge)]()
-[![Focus](https://img.shields.io/badge/Focus-Alameda%20County%20Food%20Bank-orange?style=for-the-badge)]()
+[![Stack](https://img.shields.io/badge/Stack-SvelteKit%20%7C%20TypeScript%20%7C%20AI%20Agents-green?style=for-the-badge)](https://github.com/kenadams1990/FoodBank-Hack)
+[![Focus](https://img.shields.io/badge/Focus-Alameda%20County%20Food%20Bank-orange?style=for-the-badge)](https://github.com/kenadams1990/FoodBank-Hack)
 
 ---
 
@@ -15,9 +15,19 @@
 
 Frozen dies. Canned travels.
 
-The missing piece isn't the fish — it's the **AI agent that bridges the gap**: negotiating procurement discounts, owning the full logistics of canning, and routing shelf-stable protein directly to food banks that have no supplier contact list and no budget for a supply chain team.
+The missing piece isn't the fish — it's the **complete AI agent system** that handles everything end-to-end: finding and contacting fishery suppliers (who have no web presence or public contact info), negotiating procurement discounts autonomously, securing canning facility partnerships, managing the full repack pipeline, and routing shelf-stable protein to food banks that have no supplier relationships and no budget for a supply chain team.
 
-That's TideLift.
+That's TideLift. Not a dashboard. Not a tool. A **complete operational system**.
+
+---
+
+## Why This Is a New Category
+
+Most food bank tech stops at inventory management. TideLift starts *before* the fish is caught.
+
+The original insight was simple: **frozen seafood has perishability risk** — a single power outage or logistics delay destroys the product and the relationship. The solution was to eliminate the cold chain entirely by targeting the canning step. But that created a harder problem: **no one had the supplier contacts, the canning facility relationships, or the negotiation bandwidth** to make it work at scale.
+
+TideLift's agents solve all three — autonomously, continuously, and at a cost food banks can actually afford.
 
 ---
 
@@ -43,10 +53,26 @@ TideLift is a **multi-agent Operations Intelligence Hub** built around 5 special
 | Agent | Role | Themes Covered |
 |-------|------|----------------|
 | 🔭 **Forecast Agent** | Reads harvest calendars + inbound history to predict surplus windows, price dips, and supply gaps 2+ weeks early | Theme 1 — See It Coming |
-| 🤝 **Procurement Agent** | Autonomously negotiates volume discounts with fisheries, books canning facility slots, manages POs | Theme 3 — Production Is Manufacturing |
-| 🏭 **Canning Ops Agent** | Treats repack as a factory line — forecasts kit needs, stages raw material, predicts volunteer turnout | Theme 3 — Production Is Manufacturing |
+| 🤝 **Procurement Agent** | Finds fishery supplier contacts, autonomously negotiates volume discounts, books canning facility slots, manages POs — no Rolodex required | Theme 3 — Production Is Manufacturing |
+| 🏭 **Canning Ops Agent** | Treats repack as a factory line — forecasts kit needs, stages raw material, predicts volunteer turnout, sequences the floor | Theme 3 — Production Is Manufacturing |
 | 🚚 **Equity Router** | Routes finished cans on access windows + dietary need, not just miles; rebuilds routes in minutes when a truck goes down | Theme 4 — Equity With a Truck Attached |
 | 📊 **Analyst Agent** | Answers plain-language questions from anyone on the team — no SQL, no tickets; briefs every lead at shift start | Theme 6 — Every Team Member an Analyst |
+
+---
+
+## The Full Pipeline — End to End
+
+TideLift covers every step a human team would otherwise need to coordinate manually:
+
+1. **Surplus detection** — Forecast Agent reads harvest calendars and flags upcoming windows
+2. **Supplier outreach** — Procurement Agent finds contacts for local fisheries (no public directory needed)
+3. **Discount negotiation** — Agents autonomously negotiate pricing and lock in volume commitments
+4. **Canning facility booking** — Procurement Agent identifies co-packing partners and books slots
+5. **Canning ops management** — Canning Ops Agent manages the floor: staging, sequencing, volunteer scheduling
+6. **Finished goods routing** — Equity Router delivers to food banks by access window, dietary need, and urgency
+7. **Continuous reporting** — Analyst Agent keeps every stakeholder informed in plain language
+
+This is the pipeline that didn't exist. Food banks had no way to work with local fisheries at scale because the middle steps — contact finding, negotiation, canning logistics — required a full supply chain team. TideLift *is* that team.
 
 ---
 
@@ -95,8 +121,9 @@ TideLift directly addresses **Alameda County Food Bank's 35-item Operations Inte
 | **Distribution Reach** | Urban hubs only | Rural, remote, any pantry |
 | **Waste Risk** | High (power outages, transport) | Near zero |
 | **AI Negotiability** | Low — spot market | ✅ Contractable, forecastable |
+| **Supplier Discovery** | Manual outreach required | ✅ Agent-automated |
 
-Canning transforms a volatile, time-sensitive commodity into a **predictable, negotiable, distributable asset** — exactly what food bank supply chains need.
+Canning transforms a volatile, time-sensitive commodity into a **predictable, negotiable, distributable asset** — exactly what food bank supply chains need. And because agents handle supplier discovery and negotiation, food banks don't need existing fishery relationships to start.
 
 ---
 
@@ -107,7 +134,7 @@ Frontend:     SvelteKit (real-time dashboard, NL query interface)
 Agents:       Multi-agent orchestration — forecast, procure, can, route, analyze
 Backend:      TypeScript / Node.js
 Data:         Harvest calendars, USDC fishery data, inbound history APIs
-AI:           LLM-powered negotiation + NL Q&A layer
+AI:           LLM-powered negotiation, supplier discovery, and NL Q&A layer
 Infra:        Containerized, deployable on commodity cloud
 ```
 
@@ -147,7 +174,8 @@ npm run agents:dev
 
 - 🐟 **US fisheries discard millions of tons** of bycatch and surplus annually
 - 🥫 **Canned seafood is one of the most requested** but least donated food bank items
-- 🤖 **No AI system currently exists** to automate the fishery → canning → food bank pipeline
+- 📋 **No supplier directory exists** — food banks can't find fisheries, fisheries can't find food banks
+- 🤖 **No AI system currently exists** to automate the fishery → negotiation → canning → food bank pipeline end-to-end
 - 💰 **$2,500 First Prize** — AISCO Hackathon 2026 (Judging: July 17, Capgemini)
 
 ---
@@ -158,9 +186,10 @@ npm run agents:dev
 |-----------|------------------|
 | **Solves a real problem** | Directly from ACFB's 35-item build list + field research |
 | **AI agent-driven** | 5 specialized agents with defined roles and handoffs |
-| **Quantifiable impact** | Surplus fish → shelf-stable protein, cold chain eliminated, 2-5yr shelf life |
+| **Quantifiable impact** | Surplus fish → shelf-stable protein, cold chain eliminated, 2–5yr shelf life |
 | **Human in the loop** | Agents augment staff, never replace relationships or trust |
 | **Built for Alameda County** | All 7 themes addressed, ACFB operations specifically modeled |
+| **Complete system** | Procurement negotiation + canning logistics + routing — not just a dashboard |
 
 ---
 
