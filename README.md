@@ -1,10 +1,10 @@
-# 🌊 TideLift
+# TideLift
 
 **Surplus local fisheries → shelf-stable canned seafood → food banks.**
 
-> *Agent recommends. You decide.*
+> _Agent recommends. You decide._
 
-TideLift is an AI-assisted supply chain platform that identifies surplus fish lots, scores procurement opportunities, matches canning facilities, plans deliveries to food banks, and gates every commitment behind human approval.
+AI Supply Chain Hackathon 2026 · Built by Ken Adams @ TAT Inc
 
 ---
 
@@ -12,133 +12,85 @@ TideLift is an AI-assisted supply chain platform that identifies surplus fish lo
 
 ```mermaid
 graph TD
-  A[Fishery Supplier] -->|Surplus Lot| B[Surplus Feed]
-  B --> C[Opportunity Scorer]
-  C -->|Score 0–100| D{Operator Reviews}
-  D -->|Approves Procurement| E[Procurement Agent]
-  E -->|Counter-offer sent| A
-  D -->|Approves Facility| F[Canning Facility Matcher]
-  F -->|Books slot| G[Co-Pack Cannery]
-  G -->|Cases produced| H[Delivery Planner]
-  D -->|Approves Delivery| H
-  H -->|Shipment confirmed| I[Food Bank]
-  I -->|Meals served| J[🍱 Community]
-
-  subgraph Agent Layer
-    C
-    E
-    F
-    H
-  end
-
-  subgraph Human Gate
-    D
-  end
+  A[🐟 Surplus Lot Detected] --> B[Scorer Agent\n0–100 opportunity score]
+  B --> C[Procurement Agent\nDraft counter-offer]
+  C --> D{Operator Approves?\nPROCUREMENT}
+  D -->|Approved| E[Canning Agent\nRanked facility matches]
+  D -->|Rejected| Z[Loop ends]
+  E --> F{Operator Approves?\nFACILITY_BOOKING}
+  F -->|Approved| G[Route Agent\nDelivery plan drafts]
+  F -->|Rejected| Z
+  G --> H{Operator Approves?\nDELIVERY_RELEASE}
+  H -->|Approved| I[🚚 Shipment Released]
+  H -->|Rejected| Z
+  I --> J[📈 Impact Metrics Calculated]
 ```
 
 ---
 
-## Project Structure
+## Stack
+
+| Layer | Tech |
+|---|---|
+| Frontend | SvelteKit + Tailwind CSS |
+| Agents | TypeScript pure functions |
+| API | SvelteKit server routes |
+| State | In-memory store (demo) / PostgreSQL (prod) |
+| Tests | Vitest |
+| Deploy | Docker + docker-compose |
+
+---
+
+## Monorepo Layout
 
 ```
 FoodBank-Hack/
 ├── apps/
-│   ├── agents/          # Agent logic (scorer, procure, canning, route, approvals, pipeline)
-│   └── web/             # SvelteKit app (UI + API routes)
+│   ├── agents/           # All agent logic (scorer, procure, canning, route, pipeline, approvals)
+│   │   └── __tests__/    # Vitest unit tests
+│   └── web/              # SvelteKit app
 │       ├── src/
-│       │   ├── lib/     # store, impactMetrics, validation, components
-│       │   └── routes/  # pages + API endpoints
-│       └── ...
+│       │   ├── routes/   # Pages + API endpoints
+│       │   └── lib/      # Store, validation, metrics, components
+│       └── package.json
 ├── packages/
-│   └── shared/src/      # types, mockData, demoScenario
+│   └── shared/           # Types + seed data (used by both agents and web)
 ├── Dockerfile
 ├── docker-compose.yml
-└── .env.example
+├── .env.example
+└── README.md
 ```
 
 ---
 
 ## Setup
 
-### Prerequisites
-- Node.js 20+
-- npm 10+
-
-### Install
-
 ```bash
+# 1. Clone
 git clone https://github.com/kenadams1990/FoodBank-Hack.git
 cd FoodBank-Hack
+
+# 2. Install
 npm install
+
+# 3. Run web app (demo mode — no DB required)
+cd apps/web && npm run dev
+
+# 4. Open
+open http://localhost:5173
 ```
-
-### Run development server
-
-```bash
-cd apps/web
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173)
-
-### Run with Docker
-
-```bash
-cp .env.example .env
-docker-compose up --build
-```
-
-Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
 ## Demo Walkthrough
 
-1. Open the app and navigate to **Demo Run** in the nav
-2. Click **▶ Run Demo** — the pipeline runs step-by-step:
-   - Lot `lot-003` (2,100 lbs wild salmon) is scored: **91/100**
-   - Procurement draft created at **$2.10/lb** (40% off market)
-   - Operator approves procurement → lot advances to `PROCUREMENT_CONFIRMED`
-   - Bay Area Cannery matched and booked
-   - Delivery plan assigns cases to Alameda County and SF-Marin food banks
-   - Impact metrics update live
-3. Navigate to **Logistics Board** to see the lot move through Kanban columns
-4. Click any lot card to see the **Lot Detail + Recommendation Panel**
-5. Visit **Partners** to browse the supplier and food bank directory
-
----
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/lots` | List lots (filter: species, status, minScore, maxScore) |
-| POST | `/api/lots/:id/score` | Score a lot |
-| GET | `/api/recommendations/:lotId` | Full agent bundle |
-| GET/POST | `/api/approvals` | List or create approvals |
-| PATCH | `/api/approvals/:id` | Approve or reject (idempotent) |
-| GET | `/api/shipments` | Logistics board data |
-| GET | `/api/partners` | Supplier + food bank directory |
-| GET | `/api/audit` | Paginated audit log |
-
----
-
-## Impact Metrics
-
-Calculated from all non-expired, non-available lots:
-
-| Metric | Formula |
-|--------|---------|
-| Food Rescued | Sum of lot `lbs` |
-| Cans Produced | `lbs × 1.8` (14.75 oz cans) |
-| Cost Avoided | `lbs × (marketPrice − actualPrice)` per lot |
-| Meals Estimated | 1 can = 1 meal |
-
----
-
-## Environment Variables
-
-See [`.env.example`](.env.example) for all required variables.
+1. Open **Dashboard** — see 8 surplus lots with live status badges
+2. Click any `AVAILABLE` lot → hit **Score This Lot** → see the 0–100 breakdown
+3. Scroll to **Agent Recommendations** — three panels: Procurement, Facility, Delivery
+4. Each panel shows the agent’s draft and **Approve / Reject** buttons
+5. Approve all three → lot advances through the kanban
+6. Check **Logistics Board** → see the lot move columns in real time
+7. Visit **Demo Run** → hit ▶ to watch the full pipeline animate step-by-step with impact metrics
 
 ---
 
@@ -151,4 +103,27 @@ npx vitest run
 
 ---
 
-*Built for AI Supply Chain Hackathon 2026 • TATinc.us*
+## Docker Deploy
+
+```bash
+docker-compose up --build
+# App: http://localhost:3000
+# Postgres: localhost:5432
+```
+
+---
+
+## Impact Metrics
+
+| Metric | Calculation |
+|---|---|
+| Food Rescued | Sum of lbs from confirmed+ lots |
+| Cans Produced | `lbs × 0.88 yield ÷ 0.55 lbs/can` |
+| Meals Estimated | 1 can = 1 meal (400g baseline) |
+| Cost Avoided | `(market − purchase price) × lbs` |
+
+---
+
+## Design Principle
+
+The agent pipeline scores, drafts, and recommends. Every procurement commitment, facility booking, and delivery release requires explicit operator approval before any state change occurs. No money moves, no facility is booked, no shipment releases without a human in the loop.

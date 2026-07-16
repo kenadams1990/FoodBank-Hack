@@ -6,9 +6,9 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - PORT=3000
-      - HOST=0.0.0.0
-      - DATABASE_URL=postgresql://tidelift:tidelift@db:5432/tidelift
+      - NODE_ENV=production
+      - DEMO_MODE=true
+      - PUBLIC_APP_URL=http://localhost:3000
     depends_on:
       - db
     restart: unless-stopped
@@ -17,8 +17,8 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: tidelift
-      POSTGRES_PASSWORD: tidelift
-      POSTGRES_DB: tidelift
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tidelift_db
     ports:
       - '5432:5432'
     volumes:

@@ -1,45 +1,40 @@
-// impactMetrics.ts — Impact calculator
-// Computes food rescued, cans produced, cost avoided, and meals estimated.
+// impactMetrics.ts — Impact calculation
+// Baseline: 1 can = 400g net weight = 1 meal
 
-import type { SurplusLot } from '../../../../../packages/shared/src/types';
+import type { SurplusLot } from '../../../../packages/shared/src/types';
 
 export type ImpactMetrics = {
   lbsRescued: number;
   cansProduced: number;
-  costAvoided: number; // USD vs. market price
-  mealsEstimated: number; // 1 can = 1 meal baseline
+  mealsEstimated: number;
+  costAvoided: number;      // vs. buying at full market rate
+  retailValueAvoided: number; // vs. retail can price (~$1.80/can)
 };
 
-// Conversion constants
-const LBS_TO_CANS = 1.8;          // ~1 lb fish → 1.8 cans (14.75 oz)
-const CANS_PER_CASE = 24;
-const MEALS_PER_CAN = 1;
+const YIELD = 0.88;           // 88% usable after trim
+const LBS_PER_CAN = 0.55;     // ~14.75oz net
+const RETAIL_PER_CAN = 1.80;  // average retail price for canned fish
 
 export function calcImpact(lots: SurplusLot[]): ImpactMetrics {
-  const activeLots = lots.filter(
-    (l) => !['AVAILABLE', 'EXPIRED'].includes(l.status)
+  const processed = lots.filter(l =>
+    ['PROCUREMENT_CONFIRMED', 'IN_PRODUCTION', 'SHIPPED', 'DELIVERED'].includes(l.status)
   );
 
-  const lbsRescued = activeLots.reduce((s, l) => s + l.lbs, 0);
-  const cansProduced = Math.floor(lbsRescued * LBS_TO_CANS);
-  const costAvoided = activeLots.reduce(
-    (s, l) => s + l.lbs * (l.marketPricePerLb - l.pricePerLb), 0
+  const lbsRescued = processed.reduce((s, l) => s + l.lbs, 0);
+  const cansProduced = Math.floor((lbsRescued * YIELD) / LBS_PER_CAN);
+  const mealsEstimated = cansProduced;
+
+  const costAvoided = processed.reduce((s, l) =>
+    s + (l.marketPricePerLb - l.pricePerLb) * l.lbs, 0
   );
-  const mealsEstimated = cansProduced * MEALS_PER_CAN;
+
+  const retailValueAvoided = Math.round(cansProduced * RETAIL_PER_CAN * 100) / 100;
 
   return {
-    lbsRescued: Math.round(lbsRescued),
+    lbsRescued,
     cansProduced,
-    costAvoided: Math.round(costAvoided * 100) / 100,
     mealsEstimated,
-  };
-}
-
-export function formatImpact(m: ImpactMetrics): Record<string, string> {
-  return {
-    'Food Rescued': `${m.lbsRescued.toLocaleString()} lbs`,
-    'Cans Produced': `${m.cansProduced.toLocaleString()} cans (${Math.floor(m.cansProduced / CANS_PER_CASE).toLocaleString()} cases)`,
-    'Cost Avoided': `$${m.costAvoided.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    'Meals Estimated': `${m.mealsEstimated.toLocaleString()} meals`,
+    costAvoided: Math.round(costAvoided * 100) / 100,
+    retailValueAvoided,
   };
 }

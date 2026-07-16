@@ -1,69 +1,70 @@
 // scorer.test.ts — Unit tests for opportunity scorer
 import { describe, it, expect } from 'vitest';
 import { scoreLot } from '../scorer';
-import type { SurplusLot, FoodBank, CanningFacility } from '../../../packages/shared/src/types';
-import { FOOD_BANKS, CANNING_FACILITIES, SURPLUS_LOTS } from '../../../packages/shared/src/mockData';
+import type { SurplusLot, CanningFacility, FoodBank } from '../../../packages/shared/src/types';
 
-const HIGH_VALUE_LOT: SurplusLot = {
-  id: 'test-001',
+const mockLot: SurplusLot = {
+  id: 'lot-test-001',
   supplierId: 'sup-001',
   species: 'salmon',
-  lbs: 3000,
+  lbs: 5000,
   harvestDate: '2026-07-15',
-  expiryDate: new Date(Date.now() + 1.5 * 86_400_000).toISOString().split('T')[0], // 1.5 days
-  pricePerLb: 1.20,
-  marketPricePerLb: 3.50,
-  location: 'Monterey, CA',
+  expiryDate: '2026-07-17',
+  pricePerLb: 1.44,
+  marketPricePerLb: 1.80,
+  proposedDiscountPct: 20,
+  landingLocation: 'Monterey, CA',
   status: 'AVAILABLE',
-  createdAt: '2026-07-15T00:00:00Z',
 };
 
-const LOW_VALUE_LOT: SurplusLot = {
-  id: 'test-002',
-  supplierId: 'sup-001',
-  species: 'sardine',
-  lbs: 100,
-  harvestDate: '2026-07-15',
-  expiryDate: new Date(Date.now() + 15 * 86_400_000).toISOString().split('T')[0], // 15 days
-  pricePerLb: 0.63,
-  marketPricePerLb: 0.65,
-  location: 'Eureka, CA',
-  status: 'AVAILABLE',
-  createdAt: '2026-07-15T00:00:00Z',
+const mockFacility: CanningFacility = {
+  id: 'fac-001',
+  name: 'Test Cannery',
+  location: 'Richmond, CA',
+  capacityCasesPerDay: 600,
+  compatibleSpecies: ['salmon', 'sardine'],
+  certifications: ['SQF', 'HACCP'],
+  costPerCan: 0.38,
+  availableSlots: [{ date: '2026-07-17', capacityLbs: 5000 }],
+};
+
+const mockFoodBank: FoodBank = {
+  id: 'fb-001',
+  name: 'Oakland Food Bank',
+  location: 'Oakland, CA',
+  region: 'Bay Area',
+  monthlyDemandCases: 1200,
+  contact: 'Test Contact',
+  email: 'test@fb.org',
+  dietaryPrefs: [],
+  accessWindows: ['Mon 9-12'],
 };
 
 describe('scoreLot', () => {
-  it('scores a high-value lot above 70', () => {
-    const result = scoreLot(HIGH_VALUE_LOT, FOOD_BANKS, CANNING_FACILITIES);
-    expect(result.score).toBeGreaterThan(70);
-    expect(result.lotId).toBe('test-001');
+  it('returns a score between 0 and 100', () => {
+    const result = scoreLot(mockLot, [mockFacility], [mockFoodBank], new Date('2026-07-15'));
+    expect(result.total).toBeGreaterThanOrEqual(0);
+    expect(result.total).toBeLessThanOrEqual(100);
   });
 
-  it('scores a low-value lot below 40', () => {
-    const result = scoreLot(LOW_VALUE_LOT, FOOD_BANKS, CANNING_FACILITIES);
-    expect(result.score).toBeLessThan(40);
+  it('scores urgency higher when expiry is within 2 days', () => {
+    const urgent = { ...mockLot, expiryDate: '2026-07-16' };
+    const notUrgent = { ...mockLot, expiryDate: '2026-07-30' };
+    const today = new Date('2026-07-15');
+    const urgentScore = scoreLot(urgent, [mockFacility], [mockFoodBank], today);
+    const normalScore = scoreLot(notUrgent, [mockFacility], [mockFoodBank], today);
+    expect(urgentScore.urgency).toBeGreaterThan(normalScore.urgency);
   });
 
-  it('returns a breakdown with 4 dimensions', () => {
-    const result = scoreLot(HIGH_VALUE_LOT, FOOD_BANKS, CANNING_FACILITIES);
-    const keys = Object.keys(result.breakdown);
-    expect(keys).toContain('priceScore');
-    expect(keys).toContain('expiryScore');
-    expect(keys).toContain('volumeScore');
-    expect(keys).toContain('demandScore');
+  it('returns 0 demandMatch if no compatible facility', () => {
+    const incompatible = { ...mockFacility, compatibleSpecies: ['sardine'] as any };
+    const result = scoreLot(mockLot, [incompatible], [mockFoodBank], new Date('2026-07-15'));
+    expect(result.demandMatch).toBe(0);
   });
 
-  it('scores are always between 0 and 100', () => {
-    for (const lot of SURPLUS_LOTS) {
-      const result = scoreLot(lot, FOOD_BANKS, CANNING_FACILITIES);
-      expect(result.score).toBeGreaterThanOrEqual(0);
-      expect(result.score).toBeLessThanOrEqual(100);
-    }
-  });
-
-  it('recommendation is a non-empty string', () => {
-    const result = scoreLot(HIGH_VALUE_LOT, FOOD_BANKS, CANNING_FACILITIES);
-    expect(typeof result.recommendation).toBe('string');
-    expect(result.recommendation.length).toBeGreaterThan(0);
+  it('includes rationale string', () => {
+    const result = scoreLot(mockLot, [mockFacility], [mockFoodBank], new Date('2026-07-15'));
+    expect(result.rationale).toBeTruthy();
+    expect(result.rationale.length).toBeGreaterThan(10);
   });
 });
