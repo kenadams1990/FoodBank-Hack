@@ -1,9 +1,10 @@
 // GET /api/partners — supplier + food bank directory
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { db } from '$lib/store';
+import { getDb } from '$lib/store';
 
-export const GET: RequestHandler = ({ url }) => {
+export const GET: RequestHandler = ({ url, platform }) => {
+  const db = getDb(platform);
   const q = url.searchParams.get('q')?.toLowerCase() ?? '';
   let suppliers = db.suppliers.findAll();
   let foodBanks = db.foodBanks.findAll();

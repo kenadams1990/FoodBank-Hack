@@ -1,0 +1,14 @@
+# wrangler.toml — local Pages Functions config for the TideLift dashboard.
+#
+# This binding lets `wrangler pages dev` resolve `platform.env.TIDELIFT_KV`
+# locally (`apps/web/src/lib/store.ts` falls back to an in-memory store when
+# the binding is absent, e.g. plain `vite dev`). For the deployed
+# `tidelift-live-website` Pages project, the same binding must be added via
+# the Cloudflare dashboard — see the PR description for the manual step.
+name = "tidelift-live-website"
+pages_build_output_dir = ".svelte-kit/cloudflare"
+compatibility_date = "2024-09-23"
+
+[[kv_namespaces]]
+binding = "TIDELIFT_KV"
+id = "0f26d614345c4c96b4c78110134b2a79"
