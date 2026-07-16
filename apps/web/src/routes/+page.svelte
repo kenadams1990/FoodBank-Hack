@@ -16,6 +16,25 @@
   <p class="text-gray-500 text-sm mt-1">Live surplus lots from local fisheries awaiting agent action.</p>
 </div>
 
+<a
+  href="/guided-demo"
+  class="block bg-brand-dark hover:bg-brand rounded-xl p-5 mb-6 text-white transition-colors group"
+>
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <p class="text-xs font-semibold text-accent-light uppercase tracking-wider mb-1">Self-running walkthrough</p>
+      <p class="text-lg font-bold">▶ Watch the guided demo</p>
+      <p class="text-sm text-teal-100 mt-1 max-w-xl">
+        One real catch, seven real agent decisions — from on-vessel CV to a truck at ACCFB — with
+        live impact counters. Runs itself once started.
+      </p>
+    </div>
+    <span class="text-sm font-semibold bg-white text-brand-dark px-4 py-2 rounded-lg group-hover:bg-teal-50 transition-colors whitespace-nowrap">
+      Start walkthrough →
+    </span>
+  </div>
+</a>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
   <div class="lg:col-span-2">
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Available Surplus</h2>
