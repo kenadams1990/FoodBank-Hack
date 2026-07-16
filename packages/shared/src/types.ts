@@ -1,14 +1,8 @@
-// types.ts — TideLift shared domain types
-// All agent outputs are drafts until an ApprovalRequest is APPROVED.
+// types.ts — Full TideLift domain model
+// All 8 entities: Supplier, SurplusLot, CanningFacility, FoodBank,
+// Quote, Approval, Shipment, AuditEvent
 
-export type Species = 'Albacore Tuna' | 'Pacific Salmon' | 'Pacific Halibut' | 'Pacific Sardine' | 'Dungeness Crab';
-
-export type ApprovalType = 'PROCUREMENT' | 'FACILITY_BOOKING' | 'DELIVERY_RELEASE';
-export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type LotStatus = 'AVAILABLE' | 'SCORING' | 'PENDING_PROCUREMENT' | 'PROCUREMENT_CONFIRMED' | 'IN_PRODUCTION' | 'SHIPPED' | 'DELIVERED' | 'EXPIRED';
-export type ShipmentStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'CONFIRMED' | 'IN_TRANSIT' | 'DELIVERED';
-
-// ── Increment-1 legacy types (kept for backward compat) ──────────────────────
+// ─── Legacy types (kept for agent compatibility) ────────────────────────────
 export type SurplusAlert = {
   fisheryId: string;
   species: string;
@@ -34,75 +28,74 @@ export type AgencyNeed = {
   dietaryPrefs: string[];
 };
 
-// ── Production domain types ───────────────────────────────────────────────────
+// ─── Core domain entities ────────────────────────────────────────────────────
+
+export type Species = 'salmon' | 'halibut' | 'sardine' | 'albacore' | 'crab' | 'other';
+
+export type LotStatus =
+  | 'AVAILABLE'
+  | 'SCORED'
+  | 'PENDING_PROCUREMENT'
+  | 'PROCUREMENT_CONFIRMED'
+  | 'IN_PRODUCTION'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'EXPIRED';
+
+export type ApprovalType = 'PROCUREMENT' | 'FACILITY_BOOKING' | 'DELIVERY_RELEASE';
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type ShipmentStatus = 'DRAFT' | 'CONFIRMED' | 'IN_TRANSIT' | 'DELIVERED';
 
 export type Supplier = {
   id: string;
   name: string;
+  location: string;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
-  location: string;
-  port: string;
   species: Species[];
   certifications: string[];
   avgMonthlyLbs: number;
-  taxExemptEligible: boolean;
+  createdAt: string;
 };
 
 export type SurplusLot = {
   id: string;
   supplierId: string;
   species: Species;
-  weightLbs: number;
-  harvestDate: string;        // ISO date
-  expiryDate: string;         // ISO date — outer window for canning
+  lbs: number;
+  harvestDate: string;
+  expiryDate: string;
+  pricePerLb: number;
   marketPricePerLb: number;
-  proposedDiscountPct: number;
-  minOrderLbs: number;
+  location: string;
   status: LotStatus;
-  score?: number;             // 0–100, set by scorer agent
-  scoreBreakdown?: ScoreBreakdown;
-  notes?: string;
-};
-
-export type ScoreBreakdown = {
-  priceScore: number;      // 0–25
-  expiryScore: number;     // 0–25
-  volumeScore: number;     // 0–25
-  demandScore: number;     // 0–25
-  total: number;           // 0–100
+  score?: number;
+  createdAt: string;
 };
 
 export type CanningFacility = {
   id: string;
   name: string;
   location: string;
-  state: string;
-  capacityLbsPerDay: number;
-  costPerCan: number;
+  capacityCasesPerDay: number;
   compatibleSpecies: Species[];
   certifications: string[];
-  availableSlots: FacilitySlot[];
-};
-
-export type FacilitySlot = {
-  date: string;        // ISO date
-  capacityLbs: number;
-  reserved: boolean;
+  costPerCan: number;
+  availableFrom: string;
+  contactEmail: string;
 };
 
 export type FoodBank = {
   id: string;
   name: string;
-  contactName: string;
-  contactEmail: string;
   location: string;
   region: string;
-  monthlyDemandCases: number;   // cases of 24 cans
+  monthlyDemandCases: number;
+  contactName: string;
+  contactEmail: string;
   dietaryRestrictions: string[];
   accessWindows: string[];
-  priorityScore: number;        // 0–100, set by intake data
 };
 
 export type Quote = {
@@ -110,23 +103,23 @@ export type Quote = {
   lotId: string;
   supplierId: string;
   pricePerLb: number;
-  minOrderLbs: number;
-  validUntil: string;   // ISO date
-  notes: string;
-  status: 'OPEN' | 'ACCEPTED' | 'EXPIRED' | 'REJECTED';
+  moqLbs: number;
+  validUntil: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  createdAt: string;
 };
 
 export type Approval = {
   id: string;
   approvalType: ApprovalType;
-  entityId: string;       // lotId, facilityId, or shipmentId
-  entityType: string;
   status: ApprovalStatus;
-  operatorId: string;
-  rationale: string;      // agent-generated recommendation text
-  notes?: string;         // operator notes on approve/reject
+  entityId: string;
+  entityType: string;
+  operatorId: string | null;
+  draftPayload: Record<string, unknown>;
+  notes: string | null;
   createdAt: string;
-  resolvedAt?: string;
+  resolvedAt: string | null;
 };
 
 export type Shipment = {
@@ -134,12 +127,11 @@ export type Shipment = {
   lotId: string;
   facilityId: string;
   foodBankId: string;
-  cansProduced: number;
-  weightLbs: number;
+  caseCount: number;
   status: ShipmentStatus;
-  estimatedPickup: string;
-  estimatedArrival: string;
-  actualArrival?: string;
+  estimatedArrival: string | null;
+  actualArrival: string | null;
+  createdAt: string;
 };
 
 export type AuditEvent = {
@@ -148,54 +140,57 @@ export type AuditEvent = {
   entityId: string;
   action: string;
   actor: string;
-  beforeState?: Record<string, unknown>;
-  afterState?: Record<string, unknown>;
+  beforeState: Record<string, unknown> | null;
+  afterState: Record<string, unknown> | null;
   timestamp: string;
 };
 
-// ── Agent output types ────────────────────────────────────────────────────────
+// ─── Agent output types ──────────────────────────────────────────────────────
+
+export type OpportunityScore = {
+  lotId: string;
+  score: number; // 0–100
+  breakdown: {
+    priceScore: number;
+    expiryScore: number;
+    volumeScore: number;
+    demandScore: number;
+  };
+  recommendation: string;
+};
 
 export type DraftProcurementAction = {
   lotId: string;
   supplierId: string;
-  counterPricePerLb: number;
-  suggestedMOQLbs: number;
+  counterOfferPricePerLb: number;
+  suggestedMoqLbs: number;
   justification: string;
-  savingsVsMarket: number;
-  estimatedTotalCost: number;
+  offerValidHrs: number;
 };
 
 export type FacilityMatch = {
   facility: CanningFacility;
-  slot: FacilitySlot;
-  matchScore: number;    // 0–100
-  matchReason: string;
-  estimatedCans: number;
+  matchScore: number;
   estimatedDays: number;
-  totalCanningCost: number;
+  estimatedCases: number;
+  rationale: string;
 };
 
 export type ShipmentDraft = {
-  foodBank: FoodBank;
-  cansAllocated: number;
+  lotId: string;
+  facilityId: string;
+  foodBankId: string;
+  foodBankName: string;
+  estimatedCases: number;
   deliveryWindow: string;
   routeNotes: string;
-  priorityReason: string;
 };
 
 export type RecommendationBundle = {
   lot: SurplusLot;
+  score: OpportunityScore;
   procurementDraft: DraftProcurementAction;
   facilityMatches: FacilityMatch[];
   shipmentDrafts: ShipmentDraft[];
-  agentBrief: string;
-  generatedAt: string;
-};
-
-export type ImpactMetrics = {
-  lbsRescued: number;
-  cansProduced: number;
-  costAvoided: number;
-  mealsEstimated: number;
-  lotsProcessed: number;
+  brief: string;
 };
