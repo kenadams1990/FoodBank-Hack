@@ -1,123 +1,137 @@
-// types.ts — TideLift shared domain types
-// All agent outputs are DraftActions — never auto-committed.
+// ============================================================================
+// TideLift AI — Operations Intelligence Hub: shared types
+//
+// The hub is 5 agents over the food bank's INTERNAL supply chain. Every agent
+// returns a DRAFT/recommendation with a `reason` — never an execution.
+// "Agent recommends. You decide." (human-in-the-loop is a product rule.)
+// ============================================================================
 
-// ── Core domain ──────────────────────────────────────────────────────────────
-
-export type Species = 'salmon' | 'halibut' | 'sardine' | 'tuna' | 'crab' | 'other';
-
-export type LotStatus =
-  | 'AVAILABLE'
-  | 'SCORED'
-  | 'PROCUREMENT_PENDING'
-  | 'PROCUREMENT_CONFIRMED'
-  | 'IN_PRODUCTION'
-  | 'SHIPPED'
-  | 'DELIVERED'
-  | 'EXPIRED';
-
-export type ApprovalType = 'PROCUREMENT' | 'FACILITY_BOOKING' | 'DELIVERY_RELEASE';
-export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type UserRole = 'OPERATOR' | 'VIEWER';
-
-// ── Entities ─────────────────────────────────────────────────────────────────
-
-export type Supplier = {
-  id: string;
-  name: string;
-  contact: string;
-  email: string;
-  phone: string;
-  location: string;
-  species: Species[];
-  certifications: string[];
-  avgCapacityLbsPerWeek: number;
-};
-
-export type SurplusLot = {
-  id: string;
-  supplierId: string;
-  species: Species;
+// ---------------------------------------------------------------------------
+// Theme 1 — "See It Coming": forecast inbound supply (forecast.ts)
+// ---------------------------------------------------------------------------
+export interface InboundRecord {
+  item: string;
   lbs: number;
-  harvestDate: string;       // ISO date
-  expiryDate: string;        // ISO date — last day viable for canning
-  pricePerLb: number;        // asking price
-  marketPricePerLb: number;  // reference market rate
-  proposedDiscountPct: number;
-  landingLocation: string;
-  status: LotStatus;
-  score?: number;            // 0–100, set by scorer agent
-  notes?: string;
-};
+  receivedAt: string; // ISO date
+  source?: string;
+}
 
-export type CanningFacility = {
-  id: string;
-  name: string;
-  location: string;
-  capacityCasesPerDay: number;
-  compatibleSpecies: Species[];
-  certifications: string[];
-  costPerCan: number;
-  availableSlots: { date: string; capacityLbs: number }[];
-};
+export interface HarvestEntry {
+  item: string;
+  month: number; // 1..12
+  seasonalFactor: number; // multiplier vs baseline, e.g. 1.4 in peak season
+}
 
-export type FoodBank = {
-  id: string;
-  name: string;
-  location: string;
-  region: string;
-  monthlyDemandCases: number;
-  contact: string;
-  email: string;
-  dietaryPrefs: string[];
-  accessWindows: string[];
-};
+export interface SupplyForecast {
+  item: string;
+  predictedLbs: number;
+  confidence: number; // 0..1
+  gapVsNeedLbs: number; // needTarget - predicted (positive = shortfall)
+  recommendedBuyWindow: string | null; // e.g. "2026-07-22..2026-07-26"; null if no gap
+  reason: string; // draft rationale
+}
 
-export type Quote = {
-  id: string;
-  lotId: string;
-  supplierId: string;
+// ---------------------------------------------------------------------------
+// Theme 1 — procurement: score donors/vendors, draft a buy (procure.ts)
+// ---------------------------------------------------------------------------
+export interface VendorRecord {
+  vendor: string;
   pricePerLb: number;
-  moqLbs: number;
-  validUntil: string;  // ISO date
-  status: 'OPEN' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
-};
+  committedVsDelivered: number; // 0..1, e.g. 0.82 = delivered 82% of committed
+}
 
-export type Approval = {
-  id: string;
-  approvalType: ApprovalType;
-  status: ApprovalStatus;
-  entityId: string;      // lotId, shipmentId, etc.
-  operatorId: string;
-  draftPayload: unknown; // the agent's draft action
-  notes?: string;
-  createdAt: string;
-  resolvedAt?: string;
-};
+export interface VendorOption {
+  vendor: string;
+  reliabilityScore: number; // 0..1, from delivered-vs-committed history
+  pricePerLb: number;
+  committedVsDelivered: number;
+}
 
-export type Shipment = {
-  id: string;
-  lotId: string;
-  facilityId: string;
-  foodBankId: string;
-  cansProduced?: number;
-  status: 'DRAFT' | 'CONFIRMED' | 'IN_TRANSIT' | 'DELIVERED';
-  estimatedArrival?: string;
-  actualArrival?: string;
-};
+export interface ProcurementDraft {
+  item: string;
+  gapLbs: number;
+  vendorOptions: VendorOption[];
+  recommendedVendor: string;
+  buyWindow: string;
+  reason: string; // explains the reliability-vs-price tradeoff
+}
 
-export type AuditEvent = {
-  id: string;
-  entityType: 'LOT' | 'APPROVAL' | 'SHIPMENT' | 'QUOTE';
-  entityId: string;
-  action: string;
-  actor: string;
-  beforeState?: unknown;
-  afterState?: unknown;
-  timestamp: string;
-};
+// ---------------------------------------------------------------------------
+// Theme 3 — "Production is Manufacturing": the repack line (production.ts)
+// ---------------------------------------------------------------------------
+export interface KitDemand {
+  kitType: string;
+  quantity: number;
+}
 
-// ── Legacy types (kept for backward compat) ───────────────────────────────────
+export interface VolunteerSignup {
+  name: string;
+  shift: string;
+  noShowHistory: number; // 0..1 prior no-show rate
+}
 
+export interface ProductionPlan {
+  date: string;
+  kitsToBuild: number;
+  recommendedCrew: number;
+  lineSetup: string; // e.g. "2 pack stations + 1 QC"
+  stagingSteps: string[]; // ordered "stage tonight" list
+  volunteerNoShowRisk: number; // 0..1
+  reason: string;
+}
+
+// ---------------------------------------------------------------------------
+// Theme 4 — "Equity With a Truck Attached": equity routing (route.ts)
+// ---------------------------------------------------------------------------
+export interface DeliveryPlanRow {
+  agency: string;
+  neighborhood: string;
+  accessWindow: string; // when the agency can actually receive
+  urgencyScore: number; // higher = more urgent (perishability + need)
+  allocatedLbs: number;
+  perishablePriority: boolean; // perishables must not sit behind shelf-stable
+  driverLoadNote: string; // difficulty-aware, not just stop count
+  reason: string;
+}
+
+// ---------------------------------------------------------------------------
+// Theme 5 — "Need Is the Demand Signal": partner-agency need
+// ---------------------------------------------------------------------------
+export interface AgencyNeed {
+  agencyId: string;
+  neighborhood: string;
+  proteinGapLbs: number;
+  accessWindows: string[];
+  dietaryPrefs: string[];
+  perishableCapacity?: number; // lbs of cold storage the agency can accept
+}
+
+// ---------------------------------------------------------------------------
+// Theme 6 — "Every Team Member an Analyst": NL brief (analyst.ts)
+// ---------------------------------------------------------------------------
+export interface ShiftBrief {
+  markdown: string;
+  generatedBy: 'gemini' | 'fallback'; // demo-safe: falls back if no network/key
+}
+
+// ---------------------------------------------------------------------------
+// Top-level hub state the dashboard renders (apps/web)
+// ---------------------------------------------------------------------------
+export interface HubState {
+  forecast: SupplyForecast[];
+  procurement: ProcurementDraft[];
+  production: ProductionPlan;
+  delivery: DeliveryPlanRow[];
+  brief: ShiftBrief;
+}
+
+// ============================================================================
+// Surplus fishery catch — one supported inbound supply stream.
+// The hub ingests many supply sources (donated produce, purchased food, and
+// surplus local Bay Area catch among them). Surplus catch — and its optional
+// shelf-stable co-pack path — is one first-class stream the forecast/procure
+// agents can handle, not a separate product. Kept and supported.
+// ============================================================================
 export type SurplusAlert = {
   fisheryId: string;
   species: string;
@@ -133,12 +147,4 @@ export type CanningJob = {
   cansTarget: number;
   stagePlan: string[];
   yieldPct?: number;
-};
-
-export type AgencyNeed = {
-  agencyId: string;
-  neighborhood: string;
-  proteinGapLbs: number;
-  accessWindows: string[];
-  dietaryPrefs: string[];
 };

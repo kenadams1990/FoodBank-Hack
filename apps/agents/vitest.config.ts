@@ -1,14 +1,21 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
+  root: __dirname,
   test: {
     globals: true,
     environment: 'node',
+    include: ['__tests__/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/.git/**'],
   },
   resolve: {
     alias: {
-      '../../packages/shared/src': path.resolve(__dirname, '../../packages/shared/src'),
+      '@shared': path.resolve(__dirname, '../../packages/shared/src'),
     },
   },
 });
