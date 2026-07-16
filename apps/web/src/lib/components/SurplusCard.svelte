@@ -2,37 +2,100 @@
   import type { SurplusLot } from '$shared/types';
   export let lot: SurplusLot;
 
+  // Human-readable species: Title Case, no raw IDs surfaced
+  $: species = lot.species
+    ? lot.species.charAt(0).toUpperCase() + lot.species.slice(1).toLowerCase()
+    : 'Unknown';
+
+  // Vessel name from supplierId — strip prefix, Title Case, fallback gracefully
+  $: vessel = lot.supplierId
+    ? lot.supplierId.replace(/^sup-\d+-?/i, '').replace(/-/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase()) || lot.supplierId
+    : 'Unknown Vessel';
+
   $: daysLeft = Math.max(0, Math.ceil(
     (new Date(lot.expiryDate).getTime() - Date.now()) / 86_400_000
   ));
-  $: urgentClass = daysLeft <= 2
-    ? 'bg-red-100 text-red-700'
+
+  // Thermal chip style
+  $: tempClass = (lot.tempC ?? 0) > 4
+    ? 'chip-alert'
+    : (lot.tempC ?? 0) > 3
+      ? 'chip-warn'
+      : 'chip-ok';
+
+  // Urgency chip style
+  $: urgencyClass = daysLeft <= 2
+    ? 'chip-alert'
     : daysLeft <= 4
-      ? 'bg-amber-100 text-amber-700'
-      : 'bg-gray-100 text-gray-600';
+      ? 'chip-warn'
+      : 'chip-neutral';
+
+  // Ref tag — small mono identifier, shown discretely
+  $: refTag = lot.id ?? '';
 </script>
 
 <a
   href="/lots/{lot.id}"
-  class="block bg-white rounded-lg shadow-md p-4 border-l-4 border-brand hover:shadow-lg transition-shadow"
+  class="catch-ticket block p-0 group animate-fade-up"
+  aria-label="{species} lot from {vessel}"
 >
-  <div class="flex justify-between items-start mb-2">
-    <h3 class="text-lg font-bold text-brand-dark">{lot.species}</h3>
-    <div class="flex gap-1 items-center flex-wrap justify-end">
+  <!-- Card header -->
+  <div class="px-4 pt-4 pb-3 border-b border-line">
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <!-- Species + vessel -->
+      <div>
+        <h3 class="font-display font-bold text-ink text-base leading-tight">{species}</h3>
+        <p class="font-mono text-[11px] text-ink/40 mt-0.5 truncate max-w-[140px]">{vessel}</p>
+      </div>
+      <!-- Score badge -->
       {#if lot.score != null}
-        <span class="text-xs font-bold bg-teal-100 text-teal-700 rounded-full px-2 py-1">
-          ⭐ {lot.score}/100
+        <span class="shrink-0 font-mono text-xs font-medium bg-brand/10 text-brand border border-brand/20 rounded px-2 py-1">
+          {lot.score}<span class="text-brand/50">/100</span>
         </span>
       {/if}
-      <span class="text-xs rounded-full px-2 py-1 {urgentClass}">
-        ⏱ {daysLeft}d left
+    </div>
+    <!-- Ref tag: small, unobtrusive -->
+    {#if refTag}
+      <span class="readout">{refTag}</span>
+    {/if}
+  </div>
+
+  <!-- Card body -->
+  <div class="px-4 py-3">
+    <!-- Main readout row -->
+    <div class="flex items-baseline gap-3 mb-3">
+      <span class="font-display font-extrabold text-2xl text-ink">
+        {lot.lbs.toLocaleString()}
+      </span>
+      <span class="font-mono text-xs text-ink/40">lbs</span>
+      <span class="ml-auto font-mono text-base font-medium text-ink/70">
+        {lot.proposedDiscountPct}%
+        <span class="font-mono text-xs text-ink/30">disc</span>
       </span>
     </div>
-  </div>
-  <p class="text-sm text-gray-500 mb-1">{lot.supplierId}</p>
-  <p class="text-xs text-gray-400 mb-3 font-mono">{lot.id}</p>
-  <div class="flex justify-between items-center">
-    <span class="text-2xl font-bold text-gray-800">{lot.lbs.toLocaleString()} lbs</span>
-    <span class="text-lg font-semibold text-accent">{lot.proposedDiscountPct}% disc.</span>
+
+    <!-- Status chips row -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Thermal chip -->
+      {#if lot.tempC != null}
+        <span class={tempClass}>
+          <!-- Thermometer SVG -->
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          {lot.tempC.toFixed(1)}°C
+        </span>
+      {/if}
+      <!-- Urgency chip -->
+      <span class={urgencyClass}>
+        <!-- Clock SVG -->
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        {daysLeft}d left
+      </span>
+    </div>
   </div>
 </a>
