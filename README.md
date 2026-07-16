@@ -1,31 +1,154 @@
-# TideLift AI — FoodBank Hack
+# 🌊 TideLift
 
-**Surplus local fisheries → shelf-stable canned seafood for food banks**
+**Surplus local fisheries → shelf-stable canned seafood → food banks.**
 
-Hackathon: AI Supply Chain Hackathon 2026 – Food Banks + AI (Alameda County focus)
+> *Agent recommends. You decide.*
 
-## Mission
-Turn volatile, perishable seafood surplus into long-shelf-life protein that food banks can distribute without cold chain. One multi-agent Operations Intelligence Hub that forecasts, negotiates, cans, and routes—while keeping humans in charge of relationships and trust.
+TideLift is an AI-assisted supply chain platform that identifies surplus fish lots, scores procurement opportunities, matches canning facilities, plans deliveries to food banks, and gates every commitment behind human approval.
 
-## Core Insight
-Frozen dies. Canned travels. The missing piece is an agent that can negotiate procurement discounts and own the full logistics of canning + delivery when food kitchens have no contact list.
+---
 
-## Themes Covered (Alameda Build List)
-- Theme 1 See It Coming: surplus forecast, vendor scoring, buy windows
-- Theme 3 Production Is Manufacturing: canning as a repack line
-- Theme 4 Equity With a Truck Attached: need + access routing
-- Theme 5 Need Is the Demand Signal: dietary match, pull-based
-- Theme 6 Every Team Member an Analyst: NL Q&A + briefs
-- Theme 7 A Smarter Movement: cross-food-bank surplus match
+## Architecture
 
-## Quick Start
+```mermaid
+graph TD
+  A[Fishery Supplier] -->|Surplus Lot| B[Surplus Feed]
+  B --> C[Opportunity Scorer]
+  C -->|Score 0–100| D{Operator Reviews}
+  D -->|Approves Procurement| E[Procurement Agent]
+  E -->|Counter-offer sent| A
+  D -->|Approves Facility| F[Canning Facility Matcher]
+  F -->|Books slot| G[Co-Pack Cannery]
+  G -->|Cases produced| H[Delivery Planner]
+  D -->|Approves Delivery| H
+  H -->|Shipment confirmed| I[Food Bank]
+  I -->|Meals served| J[🍱 Community]
+
+  subgraph Agent Layer
+    C
+    E
+    F
+    H
+  end
+
+  subgraph Human Gate
+    D
+  end
+```
+
+---
+
+## Project Structure
+
+```
+FoodBank-Hack/
+├── apps/
+│   ├── agents/          # Agent logic (scorer, procure, canning, route, approvals, pipeline)
+│   └── web/             # SvelteKit app (UI + API routes)
+│       ├── src/
+│       │   ├── lib/     # store, impactMetrics, validation, components
+│       │   └── routes/  # pages + API endpoints
+│       └── ...
+├── packages/
+│   └── shared/src/      # types, mockData, demoScenario
+├── Dockerfile
+├── docker-compose.yml
+└── .env.example
+```
+
+---
+
+## Setup
+
+### Prerequisites
+- Node.js 20+
+- npm 10+
+
+### Install
+
 ```bash
+git clone https://github.com/kenadams1990/FoodBank-Hack.git
+cd FoodBank-Hack
 npm install
+```
+
+### Run development server
+
+```bash
+cd apps/web
 npm run dev
 ```
 
-## Structure
-- `/apps/web` – SvelteKit dashboard
-- `/apps/agents` – multi-agent orchestration (forecast, procure, can, route)
-- `/packages/shared` – types, schemas
-- `/docs` – pitch, architecture, demo script
+Open [http://localhost:5173](http://localhost:5173)
+
+### Run with Docker
+
+```bash
+cp .env.example .env
+docker-compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Demo Walkthrough
+
+1. Open the app and navigate to **Demo Run** in the nav
+2. Click **▶ Run Demo** — the pipeline runs step-by-step:
+   - Lot `lot-003` (2,100 lbs wild salmon) is scored: **91/100**
+   - Procurement draft created at **$2.10/lb** (40% off market)
+   - Operator approves procurement → lot advances to `PROCUREMENT_CONFIRMED`
+   - Bay Area Cannery matched and booked
+   - Delivery plan assigns cases to Alameda County and SF-Marin food banks
+   - Impact metrics update live
+3. Navigate to **Logistics Board** to see the lot move through Kanban columns
+4. Click any lot card to see the **Lot Detail + Recommendation Panel**
+5. Visit **Partners** to browse the supplier and food bank directory
+
+---
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/lots` | List lots (filter: species, status, minScore, maxScore) |
+| POST | `/api/lots/:id/score` | Score a lot |
+| GET | `/api/recommendations/:lotId` | Full agent bundle |
+| GET/POST | `/api/approvals` | List or create approvals |
+| PATCH | `/api/approvals/:id` | Approve or reject (idempotent) |
+| GET | `/api/shipments` | Logistics board data |
+| GET | `/api/partners` | Supplier + food bank directory |
+| GET | `/api/audit` | Paginated audit log |
+
+---
+
+## Impact Metrics
+
+Calculated from all non-expired, non-available lots:
+
+| Metric | Formula |
+|--------|---------|
+| Food Rescued | Sum of lot `lbs` |
+| Cans Produced | `lbs × 1.8` (14.75 oz cans) |
+| Cost Avoided | `lbs × (marketPrice − actualPrice)` per lot |
+| Meals Estimated | 1 can = 1 meal |
+
+---
+
+## Environment Variables
+
+See [`.env.example`](.env.example) for all required variables.
+
+---
+
+## Running Tests
+
+```bash
+cd apps/agents
+npx vitest run
+```
+
+---
+
+*Built for AI Supply Chain Hackathon 2026 • TATinc.us*

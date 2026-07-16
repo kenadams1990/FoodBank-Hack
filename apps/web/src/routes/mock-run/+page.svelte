@@ -1,89 +1,105 @@
 <script lang="ts">
-  import {
-    mockSurplusFeed,
-    pickBestLot,
-    negotiatePrice,
-    buildDeliveryPlan,
-    type SurplusLot,
-    type DeliveryPlanRow,
-  } from '$lib/mockSurplusFeed';
-  import SurplusCard from '$lib/components/SurplusCard.svelte';
-  import AgentStatusPanel from '$lib/components/AgentStatusPanel.svelte';
-  import DeliveryPlanTable from '$lib/components/DeliveryPlanTable.svelte';
+  import { onMount } from 'svelte';
+  import { DEMO_SCENARIO } from '../../../../../../packages/shared/src/demoScenario';
+  import { calcImpact, formatImpact } from '$lib/impactMetrics';
+  import { SURPLUS_LOTS } from '../../../../../../packages/shared/src/mockData';
 
-  let stage: number = 0;
-  let bestLot: SurplusLot | null = null;
-  let negotiatedPrice: number | null = null;
-  let plan: DeliveryPlanRow[] = [];
+  let currentStep = 0;
+  let running = false;
+  let bundle: any = null;
+  let approvalResults: Record<string, string> = {};
+  let metrics = formatImpact(calcImpact(SURPLUS_LOTS));
 
-  const stages = [
-    'Idle — press "Run Agent" to start',
-    'Scanning surplus feed…',
-    'Agent selected best lot. Awaiting your approval.',
-    'Negotiating procurement price…',
-    'Price locked! Generating delivery plan…',
-    'Done — delivery plan ready.',
-  ];
+  const STEP_COUNT = DEMO_SCENARIO.steps.length;
 
-  function runAgent() {
-    stage = 1;
-    bestLot = null;
-    negotiatedPrice = null;
-    plan = [];
+  async function runDemo() {
+    running = true;
+    currentStep = 0;
+    approvalResults = {};
 
-    setTimeout(() => { stage = 2; bestLot = pickBestLot(mockSurplusFeed); }, 1000);
-    setTimeout(() => { stage = 3; }, 2500);
-    setTimeout(() => { if (bestLot) { negotiatedPrice = negotiatePrice(bestLot); stage = 4; } }, 4000);
-    setTimeout(() => { if (bestLot) { plan = buildDeliveryPlan(bestLot); stage = 5; } }, 5500);
+    for (let i = 0; i < STEP_COUNT; i++) {
+      currentStep = i + 1;
+      const step = DEMO_SCENARIO.steps[i];
+
+      if (step.step === 2) {
+        await fetch(`/api/lots/${DEMO_SCENARIO.lotId}/score`, { method: 'POST' });
+      }
+      if (step.step === 3) {
+        const res = await fetch(`/api/recommendations/${DEMO_SCENARIO.lotId}`);
+        bundle = await res.json();
+      }
+      if (step.step === 4 || step.step === 6 || step.step === 8) {
+        const listRes = await fetch('/api/approvals');
+        const { approvals } = await listRes.json();
+        const pending = approvals.filter((a: any) => a.entityId === DEMO_SCENARIO.lotId && a.status === 'PENDING');
+        for (const apr of pending) {
+          await fetch(`/api/approvals/${apr.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'APPROVE', operatorId: 'operator-ken', notes: 'Demo auto-run' }),
+          });
+          approvalResults[apr.approvalType] = 'APPROVED';
+        }
+      }
+
+      // Pace the steps for visual effect
+      await new Promise((r) => setTimeout(r, 700));
+    }
+
+    // Recompute metrics after demo
+    const lotRes = await fetch('/api/lots');
+    const { lots } = await lotRes.json();
+    metrics = formatImpact(calcImpact(lots));
+    running = false;
   }
 </script>
 
-<svelte:head>
-  <title>Mock Agent Run — TideLift</title>
-</svelte:head>
+<svelte:head><title>Demo Run | TideLift</title></svelte:head>
 
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6 flex items-start justify-between">
   <div>
-    <h1 class="text-2xl font-bold text-brand-dark">Mock Agent Run</h1>
-    <p class="text-gray-500 text-sm mt-1">Full end-to-end simulation — no network calls.</p>
+    <h1 class="text-2xl font-bold text-brand-dark">End-to-End Demo</h1>
+    <p class="text-gray-500 text-sm mt-1">{DEMO_SCENARIO.description}</p>
   </div>
-  <button
-    on:click={runAgent}
-    class="bg-brand hover:bg-brand-dark text-white font-semibold px-6 py-2 rounded-lg shadow-sm transition-colors {stage > 0 && stage < 5 ? 'opacity-50 cursor-not-allowed' : ''}"
-    disabled={stage > 0 && stage < 5}
-  >
-    {stage === 0 ? 'Run Agent' : 'Running…'}
+  <button on:click={runDemo} disabled={running}
+    class="bg-brand-dark text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50">
+    {running ? 'Running…' : '▶ Run Demo'}
   </button>
 </div>
 
-<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-  <p class="text-blue-800 font-medium">{stages[stage]}</p>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-  <div class="lg:col-span-2">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Surplus Feed</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {#each mockSurplusFeed as lot (lot.id)}
-        <div class={stage >= 2 && bestLot?.id === lot.id ? 'ring-2 ring-accent rounded-lg' : ''}>
-          <SurplusCard {lot} />
-        </div>
-      {/each}
+<!-- Impact Metrics -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  {#each Object.entries(metrics) as [label, value]}
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <p class="text-xs text-gray-400">{label}</p>
+      <p class="text-lg font-bold text-brand-dark mt-1">{value}</p>
     </div>
-  </div>
-  <div class="space-y-4">
-    <AgentStatusPanel />
-    {#if bestLot && negotiatedPrice !== null}
-      <div class="bg-white rounded-lg shadow-md p-4">
-        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Negotiated Price</h3>
-        <div class="space-y-1">
-          <p class="text-gray-600">List: <span class="line-through">${bestLot.pricePerLb.toFixed(2)}/lb</span></p>
-          <p class="text-2xl font-bold text-green-600">${negotiatedPrice.toFixed(2)}/lb</p>
-          <p class="text-sm text-gray-500">15% agent discount applied</p>
-        </div>
-      </div>
-    {/if}
-  </div>
+  {/each}
 </div>
 
-<DeliveryPlanTable rows={plan} />
+<!-- Pipeline Steps -->
+<div class="space-y-3">
+  {#each DEMO_SCENARIO.steps as step}
+    {@const done = currentStep >= step.step}
+    {@const active = currentStep === step.step && running}
+    <div class="flex items-start gap-4 p-4 rounded-xl border transition-all
+      {active ? 'bg-brand-dark/5 border-brand-dark' : done ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold
+        {active ? 'bg-brand-dark text-white animate-pulse' : done ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'}">
+        {done && !active ? '✓' : step.step}
+      </div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2">
+          <p class="text-sm font-semibold {done ? 'text-gray-800' : 'text-gray-400'}">{step.label}</p>
+          {#if step.requiresHuman}
+            <span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">👤 Human Gate</span>
+          {/if}
+        </div>
+        <p class="text-xs text-gray-500 mt-0.5">{step.description}</p>
+        {#if done && step.requiresHuman && approvalResults[step.entity?.replace('Approval','')]}
+          <p class="text-xs text-green-600 mt-1 font-medium">✓ Approved by operator-ken</p>
+        {/if}
+      </div>
+    </div>
+  {/each}
+</div>
