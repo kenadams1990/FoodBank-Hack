@@ -61,3 +61,25 @@ Hackathon: AISCO "AI Supply Chain Observatory", Food Banks + AI. Judging July 17
 
 **Next up:** verify ACCFB §3 figures; bring `forecast`/`procure`/`canning`/`analyst` up to `route.ts`'s bar;
 wire the dashboard to real agent output; reconcile pitch docs with the widened scope. Judging is July 17.
+
+### 2026-07-16 (demo day) — Fable 5 orchestrating Sonnet subagents
+- **Scope pivot (team decision):** all-in on the fish concept; onsite advisors said focus on ONE segment —
+  vessel → pickup/processing. Sourced from the team Slack (`#hackathon-food-banks`, `#ideas`).
+- Merged the team's PR #4 full-stack build (Docker, API routes, approvals/pipeline/scorer stack), keeping
+  the pnpm-workspace migration; took theirs on all product-code conflicts.
+- **Fixed PR #4's broken build:** added the missing shared types (SurplusLot, Supplier, CanningFacility,
+  FoodBank, Quote, Approval, Shipment, AuditEvent), implemented `planDelivery` in route.ts, fixed a
+  type-reexport that broke the web build, rewrote 3 stale test files. 45/45 → green.
+- **Shipped the advisor-priority segment:** `apps/agents/intake.ts` (on-vessel CV metrics drive dispatch
+  before the truck rolls; dockside sort into barcoded bins; thermal-cam QA flags > 4°C) + 12 tests
+  (57/57 total) + `/api/intake` + `/intake` dashboard page with nav. Page + tests built by Sonnet
+  subagents to spec.
+- **README revised** (Sonnet subagent): human-in-the-loop framing throughout ("Agent recommends. You
+  decide."), vessel→processing build-focus section, corrected pnpm quick start.
+- **CI greened** (Sonnet subagent): two stacked config bugs — `pnpm/action-setup` `version: 11` conflicting
+  with the `packageManager` pin (drop the workflow input when packageManager is pinned), and pnpm@11
+  requiring Node ≥22.13 while CI ran Node 20 (bumped to 22). ci.yml only, 2 commits.
+- Team note: Pragnaya Priyadarshini stepped back from the project (posted in Slack `#social`).
+
+**Next up (pre-judging):** rehearse the demo flow (/intake → approvals → logistics → audit); update
+docs/DEMO_SCRIPT.md for the intake-first story; verify ACCFB §3 figures if time allows.
