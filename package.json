@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "echo 'Wire apps/web SvelteKit app here'",
-    "build": "echo 'Wire build here'",
-    "typecheck": "tsc --noEmit"
+    "dev": "npm --workspace apps/web run dev",
+    "build": "npm --workspace apps/web run build",
+    "typecheck": "npm --workspace apps/web run check"
   },
   "workspaces": [
-    "apps/*",
+    "apps/agents",
+    "apps/web",
     "packages/*"
-  ]
+  ],
+  "overrides": {
+    "cookie": "^0.7.2"
+  }
 }
