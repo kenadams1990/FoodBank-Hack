@@ -290,6 +290,15 @@ export interface VesselCatchLog {
   location: string;
   loggedAt: string;      // ISO timestamp
   pickupWindow: string;
+  // Optional catch-photo reference. When present, the intake layer runs a real
+  // YOLO detection on it (apps/agents/vision.ts) and replaces the hardcoded
+  // cvEstimate above with the model's read. Absent → the mock cvEstimate is
+  // used. Optional so existing seed data and tests are unaffected.
+  catchPhotoUrl?: string;
+  // Optional harvest coordinates for the provenance contamination lookup
+  // (apps/agents/provenance.ts). When absent, the lookup falls back to matching
+  // the `location` string above. Optional so existing seed data is unaffected.
+  coordinates?: { lat: number; lng: number };
 }
 
 export interface PickupDispatch {
@@ -309,6 +318,11 @@ export interface SortedContainer {
   tempC: number;
   qaStatus: 'PASS' | 'FLAG';
   reason: string;
+  // Optional eye/gill freshness read (0..1), added alongside the thermal QA by
+  // the vision layer (apps/agents/vision.ts). A low score ORs into qaStatus —
+  // it never removes a temperature FLAG, only adds one. Optional so sortAtDock
+  // and its tests are unaffected.
+  freshnessScore?: number;
 }
 
 export interface DockIntakeResult {
@@ -318,6 +332,11 @@ export interface DockIntakeResult {
   totalLbsAccepted: number;
   flaggedCount: number;
   summary: string;
+  // Optional provenance-based contamination flag for the whole lot (same water
+  // source), attached by apps/agents/provenance.ts — a location→NOAA lookup,
+  // not computer vision. Optional so existing callers/tests are unaffected.
+  contaminationRisk?: 'LOW' | 'ELEVATED' | 'HIGH';
+  contaminationNote?: string;
 }
 
 // ============================================================================

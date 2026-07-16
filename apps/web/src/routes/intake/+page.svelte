@@ -2,11 +2,32 @@
   import { onMount } from 'svelte';
   import type { VesselCatchLog, PickupDispatch, DockIntakeResult } from '$shared/types';
 
+  interface VisionMeta {
+    source: 'live' | 'cached' | 'mock-fallback';
+    dominantSpecies: string | null;
+    detectionCount: number;
+    bulk: boolean;
+    note: string;
+  }
+
   interface Intake {
     log: VesselCatchLog;
     dispatch: PickupDispatch;
     dockResult: DockIntakeResult;
+    vision?: VisionMeta;
   }
+
+  const visionBadge: Record<VisionMeta['source'], { label: string; cls: string }> = {
+    live: { label: 'LIVE VISION', cls: 'bg-emerald-100 text-emerald-700' },
+    cached: { label: 'PINNED READ', cls: 'bg-indigo-50 text-indigo-700' },
+    'mock-fallback': { label: 'SIMULATED', cls: 'bg-gray-100 text-gray-500' },
+  };
+
+  const riskBadge: Record<'LOW' | 'ELEVATED' | 'HIGH', string> = {
+    LOW: 'bg-green-50 text-green-700',
+    ELEVATED: 'bg-amber-100 text-amber-800',
+    HIGH: 'bg-red-100 text-red-700',
+  };
 
   let intakes: Intake[] = [];
   let loading = true;
@@ -36,7 +57,7 @@
   <p class="text-gray-400 animate-pulse">Loading intake feed…</p>
 {:else}
   <div class="space-y-6">
-    {#each intakes as { log, dispatch, dockResult }}
+    {#each intakes as { log, dispatch, dockResult, vision }}
       <div class="bg-white rounded-xl border border-gray-100 p-5">
         <!-- Header card -->
         <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
@@ -49,6 +70,18 @@
                     ? 'bg-blue-50 text-blue-700'
                     : 'bg-emerald-50 text-emerald-700'}"
               >{log.vesselType}</span>
+              {#if vision}
+                <span
+                  class="text-xs font-semibold px-2 py-0.5 rounded-full {visionBadge[vision.source].cls}"
+                  title={vision.note}
+                >{visionBadge[vision.source].label}</span>
+              {/if}
+              {#if dockResult.contaminationRisk}
+                <span
+                  class="text-xs font-semibold px-2 py-0.5 rounded-full {riskBadge[dockResult.contaminationRisk]}"
+                  title={dockResult.contaminationNote}
+                >{dockResult.contaminationRisk} CONTAM</span>
+              {/if}
             </div>
             <p class="text-sm text-gray-500 capitalize mt-0.5">{log.species}</p>
           </div>
@@ -68,6 +101,9 @@
             {log.cvEstimate.count.toLocaleString()} detected · avg {log.cvEstimate.avgWeightLbs} lbs ·
             grade {log.cvEstimate.sizeGrade} · confidence {(log.cvEstimate.confidence * 100).toFixed(0)}%
           </p>
+          {#if vision}
+            <p class="text-xs text-gray-400 mt-1">{vision.note}</p>
+          {/if}
         </div>
 
         <!-- Dispatch recommendation -->
@@ -99,6 +135,7 @@
                 <th class="py-2 pr-4">Container</th>
                 <th class="py-2 pr-4">Lbs</th>
                 <th class="py-2 pr-4">Temp (°C)</th>
+                <th class="py-2 pr-4">Fresh</th>
                 <th class="py-2 pr-4">Grade</th>
                 <th class="py-2 pr-4">QA</th>
                 <th class="py-2">Reason</th>
@@ -111,6 +148,9 @@
                   <td class="py-2 pr-4 text-gray-700">{c.lbs.toLocaleString()}</td>
                   <td class="py-2 pr-4 {c.qaStatus === 'FLAG' ? 'text-red-600 font-medium' : 'text-gray-700'}">
                     {c.tempC}
+                  </td>
+                  <td class="py-2 pr-4 text-gray-700">
+                    {c.freshnessScore != null ? c.freshnessScore.toFixed(2) : '—'}
                   </td>
                   <td class="py-2 pr-4 text-gray-700">{c.sizeGrade}</td>
                   <td class="py-2 pr-4">

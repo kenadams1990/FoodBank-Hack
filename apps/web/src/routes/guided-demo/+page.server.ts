@@ -13,6 +13,8 @@
 
 import type { PageServerLoad } from './$types';
 import { mockCatchLogs, evaluateCatchLog, sortAtDock } from '$agents/intake';
+import { resolveCachedEstimate, resolveFreshness, applyFreshnessToDock } from '$agents/vision';
+import { attachContamination } from '$agents/provenance';
 import { scoreLot } from '$agents/scorer';
 import { draftProcurement } from '$agents/procure';
 import { matchFacilities } from '$agents/canning';
@@ -25,12 +27,23 @@ const CATCH_LOG_ID = 'vcl-001';
 const MAPPED_LOT_ID = 'lot-003';
 
 export const load: PageServerLoad = () => {
-  // Step 1 — on-vessel CV → dispatch draft (before the truck rolls)
-  const catchLog = mockCatchLogs.find((l) => l.id === CATCH_LOG_ID)!;
+  // Step 1 — on-vessel CV → dispatch draft (before the truck rolls).
+  // The CVEstimate is resolved through the vision layer's SYNC, deterministic
+  // path (pinned cache → mock) — never a live model call — so this walkthrough
+  // is byte-for-byte repeatable and independent of the inference host.
+  const rawCatchLog = mockCatchLogs.find((l) => l.id === CATCH_LOG_ID)!;
+  const vision = resolveCachedEstimate(rawCatchLog);
+  const catchLog = { ...rawCatchLog, cvEstimate: vision.estimate };
   const dispatch = evaluateCatchLog(catchLog);
 
-  // Step 2 — dockside sort into barcoded bins + thermal QA
-  const dockResult = sortAtDock(catchLog);
+  // Step 2 — dockside sort into barcoded bins + thermal QA, enriched with the
+  // sampled freshness read (Piece 2) and the provenance contamination flag
+  // (Piece 3). All deterministic (cached/mock + a static lookup) — no network.
+  const freshness = resolveFreshness(rawCatchLog);
+  const dockResult = attachContamination(
+    applyFreshnessToDock(sortAtDock(catchLog), freshness),
+    rawCatchLog
+  );
 
   // Step 3 — opportunity score
   const lot = SURPLUS_LOTS.find((l) => l.id === MAPPED_LOT_ID)!;

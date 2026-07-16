@@ -6,6 +6,23 @@
 // surface temp profiling; QA flags anything outside the cold chain.
 //
 // Every output is a DRAFT with a reason. Agent recommends. You decide.
+//
+// Vision integration (built): the on-vessel `cvEstimate` is produced by a real
+// YOLO model when a catch photo is present — apps/agents/vision.ts (cache →
+// live model → mock fallback). Freshness (eye/gill, Piece 2) is also in
+// vision.ts and ORs into the dockside QA flags; provenance contamination
+// (Piece 3, a location→NOAA lookup, not CV) is in apps/agents/provenance.ts.
+// This file stays agnostic to all of it — it consumes/returns the shared
+// shapes, so no change here is needed.
+//
+// TODO: roadmap — the following are deliberately NOT implemented (honest to
+// mention to judges, not to claim as built):
+//   * Microbiological QA — the true HACCP critical control point, but bacteria
+//     aren't visible to a camera; the real controls are the temperature CCP
+//     (thermal, below) plus lab micro testing we'd ROUTE lots to, not replace.
+//   * Thermal-camera hardware — surface temp here is simulated (see sortAtDock).
+//   * Histamine/TMA chem sensing and a live eye/gill freshness model (the
+//     freshness read is a wired mock until an FFE-trained classifier drops in).
 
 import type {
   VesselCatchLog,

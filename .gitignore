@@ -15,3 +15,10 @@ yarn.lock
 # OS / editor
 .DS_Store
 *.log
+
+# Vision service — model weights and Python artifacts (never commit weights)
+*.pt
+*.onnx
+services/vision/__pycache__/
+services/vision/.venv/
+services/vision/runs/
