@@ -1,87 +1,68 @@
 // canning.ts — Canning Capacity Matcher
-// Returns ranked FacilityMatch[] — never auto-books. Agent recommends. You decide.
+// Ranks facilities by species compatibility, geography, and throughput.
+// Returns FacilityMatch[] — requires FACILITY_BOOKING approval before committing.
 
 import type { SurplusLot, CanningFacility, FacilityMatch, CanningJob } from '../../packages/shared/src/types';
 
-export type CoPackerSlot = {
-  coPackerId: string;
-  name: string;
-  location: string;
-  availableDate: string;
-  capacityLbsPerDay: number;
-  costPerCan: number;
+/** Haversine distance (km) between two lat/lng pairs — simplified as city-distance proxy */
+const REGION_DISTANCES: Record<string, Record<string, number>> = {
+  'CA': { 'CA': 0, 'OR': 650, 'WA': 1200 },
+  'OR': { 'CA': 650, 'OR': 0, 'WA': 350 },
+  'WA': { 'CA': 1200, 'OR': 350, 'WA': 0 },
 };
 
-export const mockCoPacker: CoPackerSlot[] = [
-  {
-    coPackerId: 'cp-bay-001',
-    name: 'Bay Area Cannery Co-Pack',
-    location: 'Richmond, CA',
-    availableDate: '2026-07-22',
-    capacityLbsPerDay: 5000,
-    costPerCan: 0.38,
-  },
-];
+function extractState(location: string): string {
+  const match = location.match(/,\s*([A-Z]{2})$/);
+  return match ? match[1] : 'CA';
+}
 
-const STATE_DISTANCE_SCORE: Record<string, number> = {
-  CA: 25,
-  OR: 18,
-  WA: 12,
-};
+function geoScore(lotLocation: string, facilityLocation: string): number {
+  const lotState = extractState(lotLocation);
+  const facState = extractState(facilityLocation);
+  const dist = REGION_DISTANCES[lotState]?.[facState] ?? 800;
+  return Math.max(0, Math.round(100 - dist / 15));
+}
 
 export function matchFacilities(
   lot: SurplusLot,
   facilities: CanningFacility[]
 ): FacilityMatch[] {
-  const CANS_PER_LB = 1.8;
-  const results: FacilityMatch[] = [];
+  const compatible = facilities.filter(
+    (f) =>
+      f.compatibleSpecies.includes(lot.species) &&
+      new Date(f.availableFrom) <= new Date(lot.expiryDate)
+  );
 
-  for (const facility of facilities) {
-    if (!facility.compatibleSpecies.includes(lot.species as any)) continue;
-
-    const validSlots = facility.availableSlots.filter(
-      s => !s.reserved && s.capacityLbs >= lot.minOrderLbs
-    );
-    if (validSlots.length === 0) continue;
-
-    const bestSlot = validSlots.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    )[0];
-
-    const estimatedCans = Math.floor(lot.weightLbs * CANS_PER_LB * 0.88); // 88% yield
-    const estimatedDays = Math.ceil(lot.weightLbs / facility.capacityLbsPerDay);
-    const totalCanningCost = Math.round(estimatedCans * facility.costPerCan * 100) / 100;
-
-    // Score: capacity fit (40) + cost (35) + geography (25)
-    const capacityScore = Math.min(40, Math.round((Math.min(1, lot.weightLbs / facility.capacityLbsPerDay)) * 40));
-    const costScore = Math.round((1 - Math.min(1, facility.costPerCan / 0.50)) * 35);
-    const geoScore = STATE_DISTANCE_SCORE[facility.state] ?? 10;
-    const matchScore = capacityScore + costScore + geoScore;
-
-    results.push({
-      facility,
-      slot: bestSlot,
-      matchScore,
-      matchReason:
-        `${facility.name} is compatible with ${lot.species}, ` +
-        `can process ${lot.weightLbs.toLocaleString()} lbs in ~${estimatedDays} day(s), ` +
-        `earliest slot ${bestSlot.date}, cost $${facility.costPerCan}/can.`,
-      estimatedCans,
-      estimatedDays,
-      totalCanningCost,
-    });
-  }
-
-  return results.sort((a, b) => b.matchScore - a.matchScore);
+  return compatible
+    .map((f) => {
+      const geo = geoScore(lot.location, f.location);
+      // Capacity: how many days to process the lot?
+      const estimatedDays = Math.ceil(lot.lbs / (f.capacityCasesPerDay * 24 * 0.3));
+      const capScore = Math.max(0, Math.round(100 - estimatedDays * 10));
+      // Certification bonus
+      const certBonus = f.certifications.includes('SQF Level 3') ? 10 : f.certifications.includes('SQF Level 2') ? 5 : 0;
+      const matchScore = Math.min(100, Math.round(geo * 0.4 + capScore * 0.45 + certBonus));
+      const estimatedCases = Math.floor(lot.lbs * 1.8 / 24); // 24 cans/case
+      return {
+        facility: f,
+        matchScore,
+        estimatedDays,
+        estimatedCases,
+        rationale:
+          `${f.name} in ${f.location}: ${estimatedDays} day(s) to process. ` +
+          `Est. ${estimatedCases.toLocaleString()} cases at $${f.costPerCan}/can. ` +
+          `Geo score ${geo}/100. Certifications: ${f.certifications.join(', ')}.`,
+      } as FacilityMatch;
+    })
+    .sort((a, b) => b.matchScore - a.matchScore);
 }
 
-// Legacy exports — kept for backward compat
-export function buildCanningJob(surplusId: string, lbs: number, slot: CoPackerSlot): CanningJob {
-  const cansTarget = Math.floor(lbs * 1.8);
+/** Legacy: builds a CanningJob from lot + selected facility */
+export function buildCanningJob(surplusId: string, lbs: number, slot: { coPackerId: string; name: string; availableDate: string; capacityLbsPerDay: number; costPerCan: number }): CanningJob {
   return {
     surplusId,
     coPackerId: slot.coPackerId,
-    cansTarget,
+    cansTarget: Math.floor(lbs * 1.8),
     stagePlan: [
       `Transport ${lbs} lbs to ${slot.name} by ${slot.availableDate}`,
       `Inspect + sort at receiving dock`,
@@ -92,3 +73,9 @@ export function buildCanningJob(surplusId: string, lbs: number, slot: CoPackerSl
     yieldPct: 88,
   };
 }
+
+export const mockCoPacker = [{
+  coPackerId: 'cp-bay-001', name: 'Bay Area Cannery Co-Pack',
+  location: 'Richmond, CA', availableDate: '2026-07-22',
+  capacityLbsPerDay: 5000, costPerCan: 0.38,
+}];

@@ -1,111 +1,73 @@
-// pipeline.ts — TideLift Agent Pipeline Orchestrator
-// Runs all agents in sequence. Each step produces a draft + approval request.
-// Nothing is committed until a human approves. Agent recommends. You decide.
+// pipeline.ts — Agent Pipeline Orchestrator
+// Runs all agents in sequence for a given lot.
+// Each step produces a draft + approval request — nothing commits without human sign-off.
 
-import type {
-  SurplusLot, CanningFacility, FoodBank, Quote, Supplier,
-  RecommendationBundle
-} from '../../packages/shared/src/types';
+import type { SurplusLot, RecommendationBundle } from '../../packages/shared/src/types';
+import { FOOD_BANKS, CANNING_FACILITIES, QUOTES } from '../../packages/shared/src/mockData';
 import { scoreLot } from './scorer';
-import { draftProcurementAction } from './procure';
+import { draftProcurement } from './procure';
 import { matchFacilities } from './canning';
-import { planDelivery } from './route';
+import { planDeliveries } from './route';
 import { generateBrief } from './analyst';
 import { createApprovalRequest } from './approvals';
 
-export type PipelineResult = {
-  bundle: RecommendationBundle;
-  procurementApprovalId: string;
-  facilityApprovalId: string;
-  deliveryApprovalId: string;
-};
-
-export function runPipeline(
-  lot: SurplusLot,
-  supplier: Supplier,
-  quotes: Quote[],
-  facilities: CanningFacility[],
-  foodBanks: FoodBank[]
-): PipelineResult {
+export function runPipeline(lot: SurplusLot): RecommendationBundle {
   // Step 1: Score
-  const scored = scoreLot(lot, facilities, foodBanks);
+  const score = scoreLot(lot, FOOD_BANKS, CANNING_FACILITIES);
 
-  // Step 2: Draft procurement — creates ApprovalRequest, does NOT commit
-  const procurementDraft = draftProcurementAction(lot, supplier, quotes);
-  const procurementApproval = createApprovalRequest(
-    'PROCUREMENT',
-    lot.id,
-    'SurplusLot',
-    `Score ${scored.score}/100. ` + procurementDraft.justification,
-    'agent:pipeline'
-  );
+  // Step 2: Draft procurement — creates approval request, does NOT submit
+  const procurementDraft = draftProcurement(lot, QUOTES);
+  createApprovalRequest('PROCUREMENT', lot.id, 'SurplusLot', {
+    ...procurementDraft,
+  });
 
-  // Step 3: Match facility — creates ApprovalRequest, does NOT book
-  const facilityMatches = matchFacilities(lot, facilities);
-  const topFacility = facilityMatches[0];
-  const facilityApproval = createApprovalRequest(
-    'FACILITY_BOOKING',
-    topFacility?.facility.id ?? lot.id,
-    'CanningFacility',
-    topFacility
-      ? `Top match: ${topFacility.facility.name} (score ${topFacility.matchScore}/100). ${topFacility.matchReason}`
-      : 'No compatible facilities found.',
-    'agent:pipeline'
-  );
+  // Step 3: Match facilities — top match triggers facility booking approval request
+  const facilityMatches = matchFacilities(lot, CANNING_FACILITIES);
+  if (facilityMatches.length > 0) {
+    createApprovalRequest('FACILITY_BOOKING', lot.id, 'SurplusLot', {
+      facilityId: facilityMatches[0].facility.id,
+      estimatedDays: facilityMatches[0].estimatedDays,
+    });
+  }
 
-  // Step 4: Plan delivery — creates ApprovalRequest, does NOT assign
-  const estimatedCans = topFacility?.estimatedCans ?? Math.floor(lot.weightLbs * 1.8 * 0.88);
-  const shipmentDrafts = planDelivery(lot, estimatedCans, foodBanks);
-  const deliveryApproval = createApprovalRequest(
-    'DELIVERY_RELEASE',
-    lot.id,
-    'SurplusLot',
-    `Delivery plan: ${shipmentDrafts.length} food bank(s), ${estimatedCans.toLocaleString()} cans total. ` +
-    shipmentDrafts.map(d => `${d.foodBank.name}: ${d.cansAllocated} cans`).join(', '),
-    'agent:pipeline'
-  );
+  // Step 4: Draft delivery plan — creates delivery release approval request
+  const topFacility = facilityMatches[0]?.facility ?? CANNING_FACILITIES[0];
+  const shipmentDrafts = planDeliveries(lot, topFacility, FOOD_BANKS);
+  if (shipmentDrafts.length > 0) {
+    createApprovalRequest('DELIVERY_RELEASE', lot.id, 'SurplusLot', {
+      shipmentDrafts,
+    });
+  }
 
   // Step 5: Generate human-readable brief
-  const agentBrief = generateBrief({
+  const brief = generateBrief({
     alert: {
-      fisheryId: supplier.id,
+      fisheryId: lot.supplierId,
       species: lot.species,
-      lbs: lot.weightLbs,
-      landingAt: supplier.location,
+      lbs: lot.lbs,
+      landingAt: lot.location,
       marketPricePerLb: lot.marketPricePerLb,
-      proposedDiscountPct: lot.proposedDiscountPct,
+      proposedDiscountPct: Math.round((1 - lot.pricePerLb / lot.marketPricePerLb) * 100),
     },
     canningJob: {
       surplusId: lot.id,
-      coPackerId: topFacility?.facility.id ?? 'tbd',
-      cansTarget: estimatedCans,
-      stagePlan: topFacility ? [
-        `Transport ${lot.weightLbs} lbs to ${topFacility.facility.name} by ${topFacility.slot.date}`,
-        `Inspect + sort at receiving dock`,
-        `Run canning line: ~${topFacility.estimatedDays} day(s)`,
-        `Label + palletize for TideLift x partner`,
-      ] : [],
+      coPackerId: topFacility.id,
+      cansTarget: Math.floor(lot.lbs * 1.8),
+      stagePlan: [],
       yieldPct: 88,
     },
-    deliveredTo: shipmentDrafts.map(d => ({
-      neighborhood: d.foodBank.location,
-      cansAllocated: d.cansAllocated,
+    deliveredTo: shipmentDrafts.map((s) => ({
+      neighborhood: s.foodBankName,
+      cansAllocated: s.estimatedCases * 24,
     })),
   });
 
-  const bundle: RecommendationBundle = {
-    lot: scored,
+  return {
+    lot,
+    score,
     procurementDraft,
     facilityMatches,
     shipmentDrafts,
-    agentBrief,
-    generatedAt: new Date().toISOString(),
-  };
-
-  return {
-    bundle,
-    procurementApprovalId: procurementApproval.id,
-    facilityApprovalId: facilityApproval.id,
-    deliveryApprovalId: deliveryApproval.id,
+    brief,
   };
 }
