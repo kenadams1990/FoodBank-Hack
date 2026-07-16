@@ -6,6 +6,7 @@
     { href: '/', label: 'Dashboard' },
     { href: '/logistics', label: 'Logistics' },
     { href: '/partners', label: 'Partners' },
+    { href: '/audit', label: 'Audit' },
     { href: '/mock-run', label: 'Demo Run' },
   ];
 

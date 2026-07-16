@@ -2,7 +2,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/store';
-import { runPipeline } from '../../../../../../../../apps/agents/pipeline';
+import { runPipeline } from '$agents/pipeline';
 
 export const GET: RequestHandler = ({ params }) => {
   const lot = db.lots.findById(params.lotId);

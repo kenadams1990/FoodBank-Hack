@@ -2,8 +2,8 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/store';
-import { scoreLot } from '../../../../../../../../../apps/agents/scorer';
-import { CANNING_FACILITIES, FOOD_BANKS } from '../../../../../../../../../packages/shared/src/mockData';
+import { scoreLot } from '$agents/scorer';
+import { CANNING_FACILITIES, FOOD_BANKS } from '$shared/mockData';
 
 export const POST: RequestHandler = ({ params }) => {
   const lot = db.lots.findById(params.id);

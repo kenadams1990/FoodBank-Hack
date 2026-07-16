@@ -4,11 +4,11 @@
 import {
   SURPLUS_LOTS, SUPPLIERS, CANNING_FACILITIES, FOOD_BANKS,
   QUOTES, AUDIT_EVENTS
-} from '../../../../packages/shared/src/mockData';
+} from '$shared/mockData';
 import type {
   SurplusLot, Supplier, CanningFacility, FoodBank,
   Quote, Approval, Shipment, AuditEvent
-} from '../../../../packages/shared/src/types';
+} from '$shared/types';
 import { MOCK_AUDIT_SEED } from './demoScenario';
 
 let lots: SurplusLot[] = structuredClone(SURPLUS_LOTS);
