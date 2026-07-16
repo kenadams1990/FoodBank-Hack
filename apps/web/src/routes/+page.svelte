@@ -35,8 +35,8 @@
 		<AgentStatusPanel />
 		<section class="rounded-3xl bg-white p-6 text-slate-900 shadow-sm">
 			<p class="text-sm font-medium uppercase tracking-[0.3em] text-emerald-600">Delivery plan</p>
-			<h2 class="mt-2 text-2xl font-semibold">Today&apos;s draft redistribution plan</h2>
-			<p class="mt-2 text-sm text-slate-600">Mock downstream handoffs keep the demo fully offline while showing supplier pickup timing.</p>
+			<h2 class="mt-2 text-2xl font-semibold">Today's draft redistribution plan</h2>
+			<p class="mt-2 text-sm text-slate-600">Mock downstream deliveries keep the demo fully offline while showing supplier pickup timing.</p>
 			<div class="mt-4">
 				<DeliveryPlanTable rows={deliveryPlan} />
 			</div>

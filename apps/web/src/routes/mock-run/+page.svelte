@@ -4,12 +4,17 @@
 	import { getMockSurplusFeed } from '$lib/mockSurplusFeed';
 
 	const surplusFeed = getMockSurplusFeed();
-	const bestLot = [...surplusFeed].sort((left, right) => right.lbs / right.pricePerLb - left.lbs / left.pricePerLb)[0];
-	const negotiatedPrice = Number((bestLot.pricePerLb * 0.89).toFixed(2));
-	const deliveryPlan = [
-		{ supplier: bestLot.supplier, fish: bestLot.fishType, lbs: 5200, eta: 'Today 5:45 PM', status: 'Pickup scheduled' },
-		{ supplier: 'Bay Cannery Partners', fish: bestLot.fishType, lbs: 3400, eta: 'Tomorrow 9:00 AM', status: 'Canning slot booked' }
-	];
+	const bestLot = surplusFeed.reduce<(typeof surplusFeed)[number] | null>((best, lot) => {
+		if (!best) return lot;
+		return lot.lbs / lot.pricePerLb > best.lbs / best.pricePerLb ? lot : best;
+	}, null);
+	const negotiatedPrice = bestLot ? Number((bestLot.pricePerLb * 0.89).toFixed(2)) : 0;
+	const deliveryPlan = bestLot
+		? [
+				{ supplier: bestLot.supplier, fish: bestLot.fishType, lbs: 5200, eta: 'Today 5:45 PM', status: 'Pickup scheduled' },
+				{ supplier: 'Bay Cannery Partners', fish: bestLot.fishType, lbs: 3400, eta: 'Tomorrow 9:00 AM', status: 'Canning slot booked' }
+			]
+		: [];
 	const stageLabels = ['Surplus feed loaded', 'Best lot selected', 'Price negotiated', 'Delivery plan generated'];
 	let stage = $state(0);
 
@@ -39,11 +44,11 @@
 
 	<section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 		{#each surplusFeed as lot}
-			<SurplusCard {lot} featured={stage > 0 && lot.id === bestLot.id} />
+			<SurplusCard {lot} featured={stage > 0 && bestLot ? lot.id === bestLot.id : false} />
 		{/each}
 	</section>
 
-	{#if stage > 0}
+	{#if stage > 0 && bestLot}
 		<section class="rounded-3xl bg-white p-6 shadow-sm">
 			<p class="text-sm font-medium uppercase tracking-[0.3em] text-emerald-600">Agent pick</p>
 			<h3 class="mt-2 text-2xl font-semibold">{bestLot.fishType} from {bestLot.supplier}</h3>
@@ -51,7 +56,7 @@
 		</section>
 	{/if}
 
-	{#if stage > 1}
+	{#if stage > 1 && bestLot}
 		<section class="rounded-3xl bg-white p-6 shadow-sm">
 			<p class="text-sm font-medium uppercase tracking-[0.3em] text-emerald-600">Negotiated price</p>
 			<h3 class="mt-2 text-3xl font-semibold">${negotiatedPrice.toFixed(2)}/lb</h3>
@@ -59,7 +64,7 @@
 		</section>
 	{/if}
 
-	{#if stage > 2}
+	{#if stage > 2 && deliveryPlan.length}
 		<section class="rounded-3xl bg-white p-6 shadow-sm">
 			<p class="text-sm font-medium uppercase tracking-[0.3em] text-emerald-600">Delivery plan</p>
 			<h3 class="mt-2 text-2xl font-semibold">Draft execution plan</h3>

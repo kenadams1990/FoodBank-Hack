@@ -2,12 +2,13 @@
 	import { onMount } from 'svelte';
 
 	const states = ['Negotiating', 'Awaiting approval', 'Idle'] as const;
+	const rotationMs = 2200;
 	let currentIndex = $state(0);
 
 	onMount(() => {
 		const timer = window.setInterval(() => {
 			currentIndex = (currentIndex + 1) % states.length;
-		}, 2200);
+		}, rotationMs);
 
 		return () => window.clearInterval(timer);
 	});
