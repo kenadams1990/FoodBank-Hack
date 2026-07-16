@@ -126,9 +126,11 @@ export interface HubState {
 }
 
 // ============================================================================
-// DEPRECATED — fishery/canning types. Kept only so the not-yet-retargeted
-// agents (forecast/procure/canning) still compile until issues #9/#10/#11 land.
-// Remove each as its agent is retargeted to the internal-ops contract above.
+// Surplus fishery catch — one supported inbound supply stream.
+// The hub ingests many supply sources (donated produce, purchased food, and
+// surplus local Bay Area catch among them). Surplus catch — and its optional
+// shelf-stable co-pack path — is one first-class stream the forecast/procure
+// agents can handle, not a separate product. Kept and supported.
 // ============================================================================
 export type SurplusAlert = {
   fisheryId: string;
