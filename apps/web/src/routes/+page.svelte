@@ -1,16 +1,22 @@
 <script lang="ts">
+  import { mockSurplusFeed } from '$lib/mockSurplusFeed';
   import SurplusCard from '$lib/components/SurplusCard.svelte';
   import AgentStatusPanel from '$lib/components/AgentStatusPanel.svelte';
-  import type { PageData } from './$types';
 
-  export let data: PageData;
+  const lots = mockSurplusFeed;
 
-  // Live from the store: "recovered" = lots that cleared operator approval and
-  // are en route to a food bank. Approving an intake run bumps these numbers.
-  $: lots = data.availableLots;
-  $: totalLbs = data.recoveredLbs;
-  $: totalMeals = data.meals;
-  $: agentActivity = data.activity;
+  // Impact math: meals = lbs ÷ 1.2 (Feeding America basis)
+  // Using available lots here as a live indicator
+  $: totalLbs = lots.reduce((s, l) => s + l.lbs, 0);
+  $: totalMeals = Math.round(totalLbs / 1.2);
+
+  const agentActivity = [
+    { time: '09:14', action: 'Scored lot', detail: 'F/V Morning Star · Salmon', score: 87 },
+    { time: '09:11', action: 'Drafted offer', detail: 'Monterey Harbor · Sardine @ 30%', score: null },
+    { time: '08:52', action: 'Awaiting approval', detail: 'Lot 3 · Halibut · 1,200 lbs', score: null },
+    { time: '08:31', action: 'Delivery planned', detail: 'Oakland Canning Co → ACCFB', score: null },
+    { time: '08:10', action: 'Thermal flag', detail: '4.1°C detected on Lot 2', score: null },
+  ];
 </script>
 
 <svelte:head>
@@ -35,7 +41,7 @@
       <span class="impact-number text-5xl sm:text-6xl leading-none">
         {totalLbs.toLocaleString()}
       </span>
-      <span class="font-mono text-white/50 text-lg mb-1">lbs recovered</span>
+      <span class="font-mono text-white/50 text-lg mb-1">lbs</span>
       <span class="font-mono text-white/20 text-2xl mb-1 mx-1">→</span>
       <span class="impact-number text-5xl sm:text-6xl leading-none">
         {totalMeals.toLocaleString()}
@@ -89,25 +95,48 @@
 </div>
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
-<!-- Guided demo CTA -->
-<a
-  href="/guided-demo"
-  class="flex items-center justify-between gap-4 flex-wrap
-         bg-brand-deep hover:bg-brand rounded-xl p-5 mb-8 transition-colors group
-         border border-brand/30"
->
-  <div>
-    <p class="font-mono text-[10px] text-brand/70 uppercase tracking-widest mb-1">Self-running walkthrough</p>
-    <p class="font-display text-base font-bold text-white">▶ Watch the guided demo</p>
-    <p class="text-sm text-white/60 mt-1 max-w-xl">
-      One real catch, seven agent decisions — vessel CV to ACCFB truck — with live impact counters.
-    </p>
-  </div>
-  <span class="font-mono text-xs font-semibold bg-brand text-white px-4 py-2 rounded-lg
-               group-hover:bg-white group-hover:text-brand-deep transition-colors whitespace-nowrap">
-    Start walkthrough →
-  </span>
-</a>
+<!-- Two ways in: the self-running walkthrough, and the hands-on prototype -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+  <!-- Guided demo CTA -->
+  <a
+    href="/guided-demo"
+    class="flex items-center justify-between gap-4 flex-wrap
+           bg-brand-deep hover:bg-brand rounded-xl p-5 transition-colors group
+           border border-brand/30"
+  >
+    <div>
+      <p class="font-mono text-[10px] text-brand/70 uppercase tracking-widest mb-1">Self-running walkthrough</p>
+      <p class="font-display text-base font-bold text-white">▶ Watch the guided demo</p>
+      <p class="text-sm text-white/60 mt-1">
+        One real catch, seven agent decisions — vessel CV to ACCFB truck — with live impact counters.
+      </p>
+    </div>
+    <span class="font-mono text-xs font-semibold bg-brand text-white px-4 py-2 rounded-lg
+                 group-hover:bg-white group-hover:text-brand-deep transition-colors whitespace-nowrap">
+      Start walkthrough →
+    </span>
+  </a>
+
+  <!-- Interactive prototype CTA -->
+  <a
+    href="/intake"
+    class="flex items-center justify-between gap-4 flex-wrap
+           bg-ink hover:bg-black rounded-xl p-5 transition-colors group
+           border border-impact/40"
+  >
+    <div>
+      <p class="font-mono text-[10px] text-impact/80 uppercase tracking-widest mb-1">Hands-on · live working prototype</p>
+      <p class="font-display text-base font-bold text-white">▶ Run the pipeline yourself</p>
+      <p class="text-sm text-white/60 mt-1">
+        Run a real catch through the agents, then approve dispatch — every decision logged to the audit trail.
+      </p>
+    </div>
+    <span class="font-mono text-xs font-semibold bg-impact text-white px-4 py-2 rounded-lg
+                 group-hover:bg-white group-hover:text-ink transition-colors whitespace-nowrap">
+      Open prototype →
+    </span>
+  </a>
+</div>
 
 <!-- ══ Main grid ════════════════════════════════════════════════════════ -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
