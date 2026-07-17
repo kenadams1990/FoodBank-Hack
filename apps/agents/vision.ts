@@ -129,9 +129,8 @@ export function mapDetectionsToEstimate(resp: DetectResponse, log: VesselCatchLo
 
 // ── Live inference (network / fs) ─────────────────────────────────────────────
 
-/** Call the inference service on a catch photo and map the result. Throws on failure. */
-export async function detectCatch(imageRef: string, log: VesselCatchLog): Promise<VisionResult> {
-  const body = await buildDetectBody(imageRef);
+/** Low-level POST to the inference service. Throws on any non-200. */
+export async function postDetect(body: Record<string, string>): Promise<DetectResponse> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), VISION_TIMEOUT_MS);
   try {
@@ -142,11 +141,47 @@ export async function detectCatch(imageRef: string, log: VesselCatchLog): Promis
       signal: controller.signal,
     });
     if (!res.ok) throw new Error(`vision service responded ${res.status}`);
-    const data = (await res.json()) as DetectResponse;
-    return mapDetectionsToEstimate(data, log);
+    return (await res.json()) as DetectResponse;
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Call the inference service on a catch photo and map the result. Throws on failure. */
+export async function detectCatch(imageRef: string, log: VesselCatchLog): Promise<VisionResult> {
+  const data = await postDetect(await buildDetectBody(imageRef));
+  return mapDetectionsToEstimate(data, log);
+}
+
+/**
+ * Map a detector response for a one-off UPLOADED photo (the Analyze page),
+ * where there is no catch log and no lot weight. Counts per box (we're counting
+ * the fish visible in this single image, not deriving from a total weight), and
+ * takes species from the dominant detected class or an optional hint.
+ */
+export function estimateFromDetections(
+  resp: DetectResponse,
+  opts: { species?: string } = {}
+): VisionResult {
+  const { detections } = resp;
+  const imgArea = Math.max(1, resp.width * resp.height);
+  const dominantSpecies = modeClassName(detections);
+  const speciesForWeight =
+    dominantSpecies && dominantSpecies !== 'fish' ? dominantSpecies : opts.species ?? 'fish';
+  const grade: CVEstimate['sizeGrade'] = detections.length
+    ? gradeFromAreaFraction(medianAreaFraction(detections, imgArea))
+    : 'M';
+  const avgWeightLbs = weightFor(speciesForWeight, grade);
+  const confidence = detections.length ? round2(mean(detections.map((d) => d.confidence))) : 0;
+
+  return {
+    estimate: { count: detections.length, avgWeightLbs, sizeGrade: grade, confidence },
+    source: 'live',
+    dominantSpecies,
+    detectionCount: detections.length,
+    bulk: false,
+    note: `${detections.length} fish detected in the uploaded photo · grade ${grade} · ${speciesForWeight}`,
+  };
 }
 
 // ── Resolution (what the app calls) ───────────────────────────────────────────
