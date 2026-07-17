@@ -81,3 +81,26 @@ wire the dashboard to real agent output; reconcile pitch docs with the widened s
   requiring Node ≥22.13 while CI ran Node 20 (bumped to 22). ci.yml only, 2 commits.
 **Next up (pre-judging):** rehearse the demo flow (/intake → approvals → logistics → audit); update
 docs/DEMO_SCRIPT.md for the intake-first story; verify ACCFB §3 figures if time allows.
+
+### 2026-07-17 (judging day) — live-session sync from team Slack
+- **Deck finalized and in use for judging:** `TideLift_Present.pptx` (10 slides) — team is presenting live at
+  Capgemini as this entry is written; the guided-demo webpage (`tidelift.tatinc.us/guided-demo`) is the
+  chosen live centerpiece, hyperlinked directly from Slide 7.
+- **Added a resilience fallback:** the screen-recorded walkthrough
+  (`apps/web/static/media/guided-demo/videos/Webpage-demo.mov`) is now committed to the repo and linked as a
+  second, offline-safe hyperlink on Slide 7 ("Watch the screen-recording (backup video)"), in case the live
+  site is unreachable mid-pitch.
+- **CV hero shot confirmed live AI, not a mockup:** Ragul's trained fish-scan model (boxes each fish with
+  count/size/species from a real catch photo) is in hand, along with the training dataset source
+  ([Zenodo record 6475675](https://zenodo.org/records/6475675)). This is the pipeline's strongest live-demo
+  moment and should stay framed that way in any future narration or write-up.
+- **Framing locked for the parts that aren't built yet:** vessel-at-sea, physical sort/conveyor, and
+  autonomous cold-room processing are presented honestly as roadmap, not implemented — "the catch scan is
+  live AI, the rest is our roadmap" tests better with judges than overclaiming.
+- **Acknowledgments finalized:** team roster, plus Hassan (Community Manager, San Ramon Valley Islamic
+  Center, who connects surplus seafood to families through the Solano and Contra Costa County food banks),
+  Alameda County Community Food Bank, and the AISCO organizers.
+- **Planned next (non-blocking for today's pitch):** a post-presentation polish pass — run the finalized deck
+  and team notes through Claude for a review, then hand a scoped follow-up prompt to Fable 5 to generate a
+  small set of supporting images/video for the deck's marketing-style beats (vessel → CV scan → dock sort →
+  processing → delivery). Tracked as roadmap polish, not a dependency of the live judging round.
