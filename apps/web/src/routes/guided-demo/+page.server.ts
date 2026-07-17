@@ -35,13 +35,6 @@ function getAI(platform: App.Platform | undefined): AIBinding | undefined {
 
 export const load: PageServerLoad = async ({ platform }) => {
   const ai = getAI(platform);
-  // TEMP DIAGNOSTIC — remove once the AI binding is confirmed live.
-  console.log('[AI DIAGNOSTIC]', {
-    hasPlatform: !!platform,
-    hasEnv: !!(platform as { env?: unknown } | undefined)?.env,
-    envKeys: Object.keys((platform as { env?: Record<string, unknown> } | undefined)?.env ?? {}),
-    hasAI: !!ai,
-  });
   // Step 1 — on-vessel CV → dispatch draft (before the truck rolls)
   const catchLog = mockCatchLogs.find((l) => l.id === CATCH_LOG_ID)!;
   const dispatch = evaluateCatchLog(catchLog);
@@ -54,15 +47,20 @@ export const load: PageServerLoad = async ({ platform }) => {
   // is present, falling back to the deterministic template otherwise.
   const lot = SURPLUS_LOTS.find((l) => l.id === MAPPED_LOT_ID)!;
   const score = scoreLot(lot, CANNING_FACILITIES, FOOD_BANKS);
-  const scoreNarration = await narrateScore(lot, score, ai);
-  score.rationale = scoreNarration.text;
 
   // Step 4 — procurement counter-offer (60%-of-market floor). Pricing math
   // is deterministic (draftProcurement); the negotiation email is a real
   // Workers AI call when available, same fallback pattern as above.
   const quotes = QUOTES.filter((q) => q.lotId === lot.id);
   const procurement = draftProcurement(lot, quotes);
-  const negotiationNarration = await narrateNegotiation(lot, procurement, ai);
+
+  // Both AI narrations run concurrently rather than sequentially — each
+  // can take several seconds, no reason to pay that cost twice in a row.
+  const [scoreNarration, negotiationNarration] = await Promise.all([
+    narrateScore(lot, score, ai),
+    narrateNegotiation(lot, procurement, ai),
+  ]);
+  score.rationale = scoreNarration.text;
   procurement.negotiationScript = negotiationNarration.text;
 
   // Step 5 — facility match

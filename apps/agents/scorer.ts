@@ -80,6 +80,6 @@ export async function narrateScore(
     `You are TideLift AI's opportunity-scoring agent for a food bank seafood rescue program. Explain in 1-2 sentences why this surplus lot received its score. Reference the specific point breakdown given. Be concise and confident. Do not invent numbers not present in the input.`,
     `Species: ${lot.species}, ${lot.lbs.toLocaleString()} lbs, ${lot.proposedDiscountPct}% discount.\nScore breakdown: price savings ${breakdown.priceSavings}/30, urgency ${breakdown.urgency}/25, lot size ${breakdown.lotSize}/25, demand match ${breakdown.demandMatch}/20.\nTotal: ${breakdown.total}/100.`,
     breakdown.rationale,
-    { max_tokens: 120, temperature: 0.4 }
+    { max_tokens: 400, temperature: 0.4 }
   );
 }
