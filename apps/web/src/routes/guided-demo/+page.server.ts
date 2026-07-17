@@ -35,6 +35,13 @@ function getAI(platform: App.Platform | undefined): AIBinding | undefined {
 
 export const load: PageServerLoad = async ({ platform }) => {
   const ai = getAI(platform);
+  // TEMP DIAGNOSTIC — remove once the AI binding is confirmed live.
+  console.log('[AI DIAGNOSTIC]', {
+    hasPlatform: !!platform,
+    hasEnv: !!(platform as { env?: unknown } | undefined)?.env,
+    envKeys: Object.keys((platform as { env?: Record<string, unknown> } | undefined)?.env ?? {}),
+    hasAI: !!ai,
+  });
   // Step 1 — on-vessel CV → dispatch draft (before the truck rolls)
   const catchLog = mockCatchLogs.find((l) => l.id === CATCH_LOG_ID)!;
   const dispatch = evaluateCatchLog(catchLog);
