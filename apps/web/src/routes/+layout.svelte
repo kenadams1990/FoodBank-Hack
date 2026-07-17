@@ -10,6 +10,7 @@
     { href: '/partners',    label: 'Partners' },
     { href: '/audit',       label: 'Audit' },
     { href: '/guided-demo', label: 'Guided Demo' },
+    { href: '/architecture', label: 'Architecture' },
   ];
 
   $: active = $page.url.pathname;

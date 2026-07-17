@@ -26,6 +26,7 @@
 |---|---|
 | **[/guided-demo](https://tidelift.tatinc.us/guided-demo)** | A self-running, narrated walkthrough of the full pipeline — no clicking required |
 | **[/intake](https://tidelift.tatinc.us/intake)** | **Hands-on, working prototype.** Run the real agent pipeline yourself on a logged catch — score → procurement counter-offer → facility match → equity route — and approve or reject the result. Every decision writes to the audit trail. |
+| **[/architecture](https://tidelift.tatinc.us/architecture)** | Reference cards: what each of the 9 pipeline steps actually does, and exactly where Cloudflare sits (edge compute vs. Workers AI vs. KV) — for anyone checking under the hood |
 
 A screen-recorded backup walkthrough is also in the repo in case the live site is unreachable:
 [`apps/web/static/media/guided-demo/videos/Webpage-demo-slowed.mp4`](apps/web/static/media/guided-demo/videos/Webpage-demo-slowed.mp4).
@@ -134,6 +135,12 @@ logged to the audit trail either way.
 | 🚚 **Equity Router** | Drafts routes on access windows + dietary need, not just miles; re-proposes routes in minutes when a truck goes down | Theme 4 — Equity With a Truck Attached |
 | 📊 **Analyst Agent** | Answers plain-language questions from anyone on the team — no SQL, no tickets; briefs every lead at shift start | Theme 6 — Every Team Member an Analyst |
 
+<p align="center">
+  <img src="docs/images/agent-pipeline-reference.png" alt="All 9 steps of the live demo pipeline, from on-vessel CV dispatch through overflow disposition, each tagged with its source file and function" width="100%" />
+</p>
+
+<p align="center"><sub>Full interactive version at <a href="https://tidelift.tatinc.us/architecture">tidelift.tatinc.us/architecture</a></sub></p>
+
 ---
 
 ## The Full Pipeline — End to End
@@ -219,6 +226,18 @@ Backend:      TypeScript / Node.js, pnpm workspace, CI-tested (vitest)
 Data:         Harvest calendars, USDC fishery data, inbound history APIs
 AI:           LLM-powered drafting, supplier discovery, and NL Q&A — human approves every output
 ```
+
+Every agent is plain deterministic TypeScript — 7 of the 9 pipeline steps never call a model at all. Workers
+AI is used only to phrase two rationale sentences (opportunity score, procurement outreach copy), with an
+8-second timeout and a deterministic fallback so a model hiccup can never break a live demo. Cloudflare KV
+is the one durable store behind the operational app — lots, approvals, shipments, and the audit log.
+
+<p align="center">
+  <img src="docs/images/architecture-cloudflare-1.png" alt="Where Cloudflare sits: browser requests flow through Cloudflare Pages to deterministic agent functions, with Workers AI and Cloudflare KV as the only two Cloudflare-dependent steps" width="100%" />
+</p>
+<p align="center">
+  <img src="docs/images/architecture-cloudflare-2.png" alt="Each of the 9 pipeline steps tagged as edge-only, Workers AI narration, or Cloudflare KV persistence" width="100%" />
+</p>
 
 ### Repo Structure
 
