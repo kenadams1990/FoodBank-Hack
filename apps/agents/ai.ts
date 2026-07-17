@@ -8,16 +8,17 @@
 // missing, the call times out, or it errors — a live judged demo must
 // never 500 because a model call hung.
 
-const MODEL = '@cf/google/gemma-4-26b-a4b-it';
-const TIMEOUT_MS = 12000;
-
-// gemma-4-26b-a4b-it is a reasoning model — it spends output tokens on an
-// internal chain-of-thought (returned separately as `message.reasoning`)
-// before it writes the actual answer to `message.content`. Too low a
-// max_tokens budget means it gets cut off mid-thought with content: null
-// (finish_reason "length") and never produces real output. 500+ gives it
-// room to think AND answer for a 1-2 sentence response.
-const DEFAULT_MAX_TOKENS = 500;
+// gemma-4-26b-a4b-it (the initial pick) is a reasoning model — it spends
+// output tokens on an internal chain-of-thought before writing the actual
+// answer, and was consistently taking 12+ seconds per call in production
+// (on top of needing a much larger token budget just to get past the
+// "thinking" phase). Too slow for a live judged demo. llama-3.1-8b-instruct
+// itself is deprecated as of 5/30/2026 — using the still-current "-fast"
+// variant instead: no reasoning overhead, low latency, still returns the
+// same OpenAI-compatible chat completion shape.
+const MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
+const TIMEOUT_MS = 8000;
+const DEFAULT_MAX_TOKENS = 250;
 
 interface WorkersAIResult {
   response?: string;

@@ -87,6 +87,6 @@ export async function narrateNegotiation(
     `You are TideLift AI's procurement negotiation agent for a non-profit seafood rescue program that buys surplus catch for food banks. Write a short, professional outreach email to a supplier proposing a bulk purchase at an already-computed price. Use the exact numbers given — do not invent figures. Keep it under 150 words. This is a DRAFT pending human operator approval — do not claim the deal is final.`,
     `Supplier: ${draft.supplierId}\nLot: ${lot.id}, ${lot.species}, ${lot.lbs.toLocaleString()} lbs, harvested ${lot.harvestDate}.\nOffer price: $${draft.recommendedPricePerLb}/lb, minimum order ${draft.recommendedMoqLbs.toLocaleString()} lbs, valid ${draft.offerExpiresHrs} hrs.\nWrite the email now.`,
     draft.negotiationScript,
-    { max_tokens: 600, temperature: 0.4 }
+    { max_tokens: 300, temperature: 0.4 }
   );
 }
