@@ -15,3 +15,11 @@ yarn.lock
 # OS / editor
 .DS_Store
 *.log
+
+# ML model weights — served from the inference host, never committed
+# (best.pt is ~357MB; GitHub rejects files > 100MB)
+best.pt
+*.pt
+*.onnx
+*.pth
+*.weights

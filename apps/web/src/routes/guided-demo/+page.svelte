@@ -232,6 +232,7 @@
                 ({data.catchLog.vesselType}) — {data.catchLog.species}, {data.catchLog.estimatedLbs.toLocaleString()} lbs.
                 CV detected {data.catchLog.cvEstimate.count.toLocaleString()}, avg {data.catchLog.cvEstimate.avgWeightLbs} lbs,
                 grade {data.catchLog.cvEstimate.sizeGrade}, confidence {(data.catchLog.cvEstimate.confidence * 100).toFixed(0)}%.
+                <span class="inline-block ml-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 align-middle">Simulated — trained fish-scan model is roadmap</span>
               </div>
               <div class="flex items-start gap-3">
                 <span

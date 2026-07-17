@@ -1,22 +1,16 @@
 <script lang="ts">
-  import { mockSurplusFeed } from '$lib/mockSurplusFeed';
   import SurplusCard from '$lib/components/SurplusCard.svelte';
   import AgentStatusPanel from '$lib/components/AgentStatusPanel.svelte';
+  import type { PageData } from './$types';
 
-  const lots = mockSurplusFeed;
+  export let data: PageData;
 
-  // Impact math: meals = lbs ÷ 1.2 (Feeding America basis)
-  // Using available lots here as a live indicator
-  $: totalLbs = lots.reduce((s, l) => s + l.lbs, 0);
-  $: totalMeals = Math.round(totalLbs / 1.2);
-
-  const agentActivity = [
-    { time: '09:14', action: 'Scored lot', detail: 'F/V Morning Star · Salmon', score: 87 },
-    { time: '09:11', action: 'Drafted offer', detail: 'Monterey Harbor · Sardine @ 30%', score: null },
-    { time: '08:52', action: 'Awaiting approval', detail: 'Lot 3 · Halibut · 1,200 lbs', score: null },
-    { time: '08:31', action: 'Delivery planned', detail: 'Oakland Canning Co → ACCFB', score: null },
-    { time: '08:10', action: 'Thermal flag', detail: '4.1°C detected on Lot 2', score: null },
-  ];
+  // Live from the store: "recovered" = lots that cleared operator approval and
+  // are en route to a food bank. Approving an intake run bumps these numbers.
+  $: lots = data.availableLots;
+  $: totalLbs = data.recoveredLbs;
+  $: totalMeals = data.meals;
+  $: agentActivity = data.activity;
 </script>
 
 <svelte:head>
@@ -41,7 +35,7 @@
       <span class="impact-number text-5xl sm:text-6xl leading-none">
         {totalLbs.toLocaleString()}
       </span>
-      <span class="font-mono text-white/50 text-lg mb-1">lbs</span>
+      <span class="font-mono text-white/50 text-lg mb-1">lbs recovered</span>
       <span class="font-mono text-white/20 text-2xl mb-1 mx-1">→</span>
       <span class="impact-number text-5xl sm:text-6xl leading-none">
         {totalMeals.toLocaleString()}
