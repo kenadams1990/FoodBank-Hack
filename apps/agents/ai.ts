@@ -39,9 +39,13 @@ export async function generateText(
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('AI timeout')), TIMEOUT_MS)),
     ]);
     const text = result?.response?.trim();
-    if (!text || text.length < 10) return { text: fallback, source: 'fallback' };
+    if (!text || text.length < 10) {
+      console.warn('[AI] Empty/short response, using fallback', { result });
+      return { text: fallback, source: 'fallback' };
+    }
     return { text, source: 'ai' };
-  } catch {
+  } catch (err) {
+    console.error('[AI] Generation failed, using fallback:', err instanceof Error ? err.message : err);
     return { text: fallback, source: 'fallback' };
   }
 }
