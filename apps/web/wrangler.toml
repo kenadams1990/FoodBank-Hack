@@ -1,14 +1,21 @@
 # wrangler.toml — local Pages Functions config for the TideLift dashboard.
 #
-# This binding lets `wrangler pages dev` resolve `platform.env.TIDELIFT_KV`
-# locally (`apps/web/src/lib/store.ts` falls back to an in-memory store when
-# the binding is absent, e.g. plain `vite dev`). For the deployed
-# `tidelift-live-website` Pages project, the same binding must be added via
-# the Cloudflare dashboard — see the PR description for the manual step.
-name = "tidelift-live-website"
+# These bindings let `wrangler pages dev` resolve `platform.env.TIDELIFT_KV`
+# / `platform.env.AI` locally (apps/web/src/lib/store.ts and
+# src/routes/guided-demo/+page.server.ts both fall back gracefully when a
+# binding is absent, e.g. plain `vite dev`). For the deployed
+# `foodbank-hack` Pages project (GitHub-integration build), verify both
+# bindings also show up under Settings → Bindings in the Cloudflare
+# dashboard after the next deploy — Pages historically needed KV bindings
+# added there manually; confirm the AI binding took effect the same way
+# before relying on it live.
+name = "foodbank-hack"
 pages_build_output_dir = ".svelte-kit/cloudflare"
 compatibility_date = "2024-09-23"
 
 [[kv_namespaces]]
 binding = "TIDELIFT_KV"
 id = "0f26d614345c4c96b4c78110134b2a79"
+
+[ai]
+binding = "AI"

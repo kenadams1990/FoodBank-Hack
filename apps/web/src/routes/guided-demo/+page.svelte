@@ -294,7 +294,14 @@
                   </div>
                 </div>
               {/each}
-              <p class="text-xs text-gray-400 mt-3">{data.score.rationale}</p>
+              <div class="flex items-start gap-2 mt-3">
+                <p class="text-xs text-gray-400 flex-1">{data.score.rationale}</p>
+                {#if data.scoreSource === 'ai'}
+                  <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-700 whitespace-nowrap">✨ Workers AI</span>
+                {:else}
+                  <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 whitespace-nowrap" title="AI binding unavailable — showing deterministic template">template</span>
+                {/if}
+              </div>
 
             {:else if step.id === 4}
               <div class="flex items-center gap-2 mb-3">
@@ -323,7 +330,14 @@
                 </div>
               </div>
               <details class="text-xs text-gray-400">
-                <summary class="cursor-pointer hover:text-gray-600">View draft negotiation email</summary>
+                <summary class="cursor-pointer hover:text-gray-600 inline-flex items-center gap-2">
+                  <span>View draft negotiation email</span>
+                  {#if data.procurementSource === 'ai'}
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-700 whitespace-nowrap">✨ Workers AI</span>
+                  {:else}
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 whitespace-nowrap" title="AI binding unavailable — showing deterministic template">template</span>
+                  {/if}
+                </summary>
                 <pre class="mt-2 bg-gray-50 rounded-lg p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed">{data.procurement.negotiationScript}</pre>
               </details>
 

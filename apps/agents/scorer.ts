@@ -2,6 +2,7 @@
 // Returns a 0–100 score for each surplus lot. Agent recommends. You decide.
 
 import type { SurplusLot, CanningFacility, FoodBank } from '../../packages/shared/src/types';
+import { generateText, type AIBinding, type Narration } from './ai';
 
 export type ScoreBreakdown = {
   priceSavings: number;   // 0–30: discount vs. market
@@ -61,4 +62,24 @@ export function scoreLot(
   ].join(' ');
 
   return { priceSavings, urgency, lotSize, demandMatch, total, rationale };
+}
+
+/**
+ * Generates a real LLM narrative explaining an already-computed score
+ * breakdown. The scoring math above is untouched — this only replaces the
+ * human-readable explanation. Falls back to the deterministic `rationale`
+ * already on the breakdown if no AI binding is available or the call fails.
+ */
+export async function narrateScore(
+  lot: SurplusLot,
+  breakdown: ScoreBreakdown,
+  ai: AIBinding | undefined
+): Promise<Narration> {
+  return generateText(
+    ai,
+    `You are TideLift AI's opportunity-scoring agent for a food bank seafood rescue program. Explain in 1-2 sentences why this surplus lot received its score. Reference the specific point breakdown given. Be concise and confident. Do not invent numbers not present in the input.`,
+    `Species: ${lot.species}, ${lot.lbs.toLocaleString()} lbs, ${lot.proposedDiscountPct}% discount.\nScore breakdown: price savings ${breakdown.priceSavings}/30, urgency ${breakdown.urgency}/25, lot size ${breakdown.lotSize}/25, demand match ${breakdown.demandMatch}/20.\nTotal: ${breakdown.total}/100.`,
+    breakdown.rationale,
+    { max_tokens: 120, temperature: 0.4 }
+  );
 }

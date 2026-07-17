@@ -2,6 +2,7 @@
 // Produces DraftProcurementAction — NEVER auto-committed. Human approves.
 
 import type { SurplusLot, Quote } from '../../packages/shared/src/types';
+import { generateText, type AIBinding, type Narration } from './ai';
 
 export type DraftProcurementAction = {
   lotId: string;
@@ -67,4 +68,25 @@ export function draftProcurement(
     estimatedTotalCost,
     estimatedSavingsVsMarket,
   };
+}
+
+/**
+ * Generates a real LLM-written negotiation email for an already-computed
+ * procurement draft. Pricing/MOQ math above is untouched — this only
+ * replaces the email copy. Falls back to the deterministic
+ * `negotiationScript` already on the draft if no AI binding is available
+ * or the call fails.
+ */
+export async function narrateNegotiation(
+  lot: SurplusLot,
+  draft: DraftProcurementAction,
+  ai: AIBinding | undefined
+): Promise<Narration> {
+  return generateText(
+    ai,
+    `You are TideLift AI's procurement negotiation agent for a non-profit seafood rescue program that buys surplus catch for food banks. Write a short, professional outreach email to a supplier proposing a bulk purchase at an already-computed price. Use the exact numbers given — do not invent figures. Keep it under 150 words. This is a DRAFT pending human operator approval — do not claim the deal is final.`,
+    `Supplier: ${draft.supplierId}\nLot: ${lot.id}, ${lot.species}, ${lot.lbs.toLocaleString()} lbs, harvested ${lot.harvestDate}.\nOffer price: $${draft.recommendedPricePerLb}/lb, minimum order ${draft.recommendedMoqLbs.toLocaleString()} lbs, valid ${draft.offerExpiresHrs} hrs.\nWrite the email now.`,
+    draft.negotiationScript,
+    { max_tokens: 250, temperature: 0.4 }
+  );
 }

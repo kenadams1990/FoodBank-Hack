@@ -13,19 +13,28 @@
 
 import type { PageServerLoad } from './$types';
 import { mockCatchLogs, evaluateCatchLog, sortAtDock } from '$agents/intake';
-import { scoreLot } from '$agents/scorer';
-import { draftProcurement } from '$agents/procure';
+import { scoreLot, narrateScore } from '$agents/scorer';
+import { draftProcurement, narrateNegotiation } from '$agents/procure';
 import { matchFacilities } from '$agents/canning';
 import { planEquityDelivery } from '$agents/route';
 import { createApprovalRequest, approveAction } from '$agents/approvals';
 import { draftOverflowDisposition } from '$agents/overflow';
+import type { AIBinding } from '$agents/ai';
 import { SURPLUS_LOTS, CANNING_FACILITIES, FOOD_BANKS, QUOTES } from '$shared/mockData';
 import type { AgencyNeed } from '$shared/types';
 
 const CATCH_LOG_ID = 'vcl-001';
 const MAPPED_LOT_ID = 'lot-003';
 
-export const load: PageServerLoad = () => {
+// Minimal shape of the Workers AI binding — avoids a hard dependency on
+// @cloudflare/workers-types just for this, mirrors the KV binding pattern
+// in apps/web/src/lib/store.ts.
+function getAI(platform: App.Platform | undefined): AIBinding | undefined {
+  return (platform as { env?: { AI?: AIBinding } } | undefined)?.env?.AI;
+}
+
+export const load: PageServerLoad = async ({ platform }) => {
+  const ai = getAI(platform);
   // Step 1 — on-vessel CV → dispatch draft (before the truck rolls)
   const catchLog = mockCatchLogs.find((l) => l.id === CATCH_LOG_ID)!;
   const dispatch = evaluateCatchLog(catchLog);
@@ -33,13 +42,21 @@ export const load: PageServerLoad = () => {
   // Step 2 — dockside sort into barcoded bins + thermal QA
   const dockResult = sortAtDock(catchLog);
 
-  // Step 3 — opportunity score
+  // Step 3 — opportunity score. Math is deterministic (scoreLot); the
+  // human-readable rationale is a real Workers AI call when the AI binding
+  // is present, falling back to the deterministic template otherwise.
   const lot = SURPLUS_LOTS.find((l) => l.id === MAPPED_LOT_ID)!;
   const score = scoreLot(lot, CANNING_FACILITIES, FOOD_BANKS);
+  const scoreNarration = await narrateScore(lot, score, ai);
+  score.rationale = scoreNarration.text;
 
-  // Step 4 — procurement counter-offer (60%-of-market floor)
+  // Step 4 — procurement counter-offer (60%-of-market floor). Pricing math
+  // is deterministic (draftProcurement); the negotiation email is a real
+  // Workers AI call when available, same fallback pattern as above.
   const quotes = QUOTES.filter((q) => q.lotId === lot.id);
   const procurement = draftProcurement(lot, quotes);
+  const negotiationNarration = await narrateNegotiation(lot, procurement, ai);
+  procurement.negotiationScript = negotiationNarration.text;
 
   // Step 5 — facility match
   const canningMatches = matchFacilities(lot, CANNING_FACILITIES);
@@ -112,7 +129,9 @@ export const load: PageServerLoad = () => {
     dockResult,
     lot,
     score,
+    scoreSource: scoreNarration.source,
     procurement,
+    procurementSource: negotiationNarration.source,
     canningMatches,
     topMatch,
     accfb,
