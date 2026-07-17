@@ -104,3 +104,26 @@ docs/DEMO_SCRIPT.md for the intake-first story; verify ACCFB §3 figures if time
   and team notes through Claude for a review, then hand a scoped follow-up prompt to Fable 5 to generate a
   small set of supporting images/video for the deck's marketing-style beats (vessel → CV scan → dock sort →
   processing → delivery). Tracked as roadmap polish, not a dependency of the live judging round.
+
+### 2026-07-17 (post-presentation) — interactive working-prototype pass
+- **Made Vessel Intake a real, hands-on human-in-the-loop flow** (`feat/working-prototype`). `/intake` now
+  runs the actual agent pipeline on a logged catch on demand — score → procurement counter-offer → facility
+  match → equity route → overflow — persists a PENDING approval, and lets an operator Approve/Reject. Approve
+  advances the lot to `PROCUREMENT_CONFIRMED` and schedules an ACCFB shipment; sub-500 lb catches take an
+  honest HOLD path. Every decision is written to the audit trail.
+- **New server backbone:** `apps/web/src/lib/server/intakePipeline.ts` + `/api/intake/run` and
+  `/api/intake/approve`, routing every mutation through the KV-backed store (`store.ts`) so a run is visible
+  across Audit and Approvals — reconciling the store with the agent-module approval arrays used previously.
+- **Honesty labeling:** on-vessel computer-vision counts and thermal readings are badged "Simulated — trained
+  fish-scan model is roadmap" on `/intake` and the guided demo; scoring/procurement/routing is the real agent
+  logic.
+  Agent output matches the deck ($1,008 saved vs market, 1,700 lbs cleared).
+- **Dashboard preserved** as the deck-aligned overview (38,400 lbs → 32,000 meals); the hands-on prototype is
+  surfaced as its own labeled entry point ("Run the pipeline yourself") alongside the guided-demo link, not a
+  replacement for either.
+- Verified end-to-end against a live dev server (run → approve → persisted shipment → audit) and in-browser;
+  agent tests 89/89 green, web build clean. Not yet deployed — the live judging site is intentionally left
+  untouched.
+- **Next:** real computer-vision hero. The trained fish-scan model (`best.pt`, YOLO weights) is in hand but
+  runs off-Cloudflare; wiring a photo→inference endpoint (e.g. a hosted Space) into `/intake` is the follow-up
+  so on-vessel CV becomes live rather than simulated.

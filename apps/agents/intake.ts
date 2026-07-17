@@ -39,14 +39,14 @@ export function evaluateCatchLog(log: VesselCatchLog): PickupDispatch {
   const recommend = !tooSmall;
 
   const reasonParts = [
-    `On-vessel CV at harvest: ${cvEstimate.count} ${log.species} detected, ` +
+    `On-vessel computer vision at harvest: ${cvEstimate.count} ${log.species} detected, ` +
       `avg ${cvEstimate.avgWeightLbs} lbs, grade ${cvEstimate.sizeGrade} ` +
       `(confidence ${(cvEstimate.confidence * 100).toFixed(0)}%).`,
     tooSmall
       ? `Below ${MIN_PICKUP_LBS} lbs minimum — hold for consolidation with another vessel.`
       : `${log.estimatedLbs.toLocaleString()} lbs clears the ${MIN_PICKUP_LBS} lbs pickup minimum.`,
     lowConfidence && !tooSmall
-      ? `CV confidence below ${DISPATCH_CONFIDENCE_FLOOR * 100}% — verify count at dockside sort.`
+      ? `Computer-vision confidence below ${DISPATCH_CONFIDENCE_FLOOR * 100}% — verify count at dockside sort.`
       : '',
     recommend ? `Purchase/segregation plan set before truck arrival — no dock idle time.` : '',
   ].filter(Boolean);
@@ -95,7 +95,7 @@ export function sortAtDock(log: VesselCatchLog): DockIntakeResult {
       qaStatus: flagged ? 'FLAG' : 'PASS',
       reason: flagged
         ? `Thermal cam read ${tempC}°C > ${SAFE_MAX_TEMP_C}°C cold-chain max — hold bin for operator inspection before processing.`
-        : `Thermal cam read ${tempC}°C, within cold chain. CV species/size match vs on-vessel log. Cleared for processing intake.`,
+        : `Thermal cam read ${tempC}°C, within cold chain. Computer-vision species/size match vs on-vessel log. Cleared for processing intake.`,
     });
   }
 
@@ -114,7 +114,7 @@ export function sortAtDock(log: VesselCatchLog): DockIntakeResult {
       `${log.vesselName}: ${containers.length} barcoded bins sorted dockside. ` +
       `${totalLbsAccepted.toLocaleString()} lbs cleared for processing, ` +
       `${flaggedCount} bin(s) flagged for operator review. ` +
-      `Dockside CV verified against on-vessel log. Agent recommends. You decide.`,
+      `Dockside computer vision verified against on-vessel log. Agent recommends. You decide.`,
   };
 }
 

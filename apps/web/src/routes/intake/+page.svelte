@@ -105,7 +105,7 @@
 <div class="mb-5">
   <h1 class="text-2xl font-bold text-brand-dark">Vessel Intake — Dock to Processing</h1>
   <p class="text-gray-500 text-sm mt-1 max-w-3xl">
-    On-vessel CV drives the purchase decision before the truck rolls. Run the intake pipeline on a
+    On-vessel computer vision drives the purchase decision before the truck rolls. Run the intake pipeline on a
     logged catch, then decide: the agent drafts, you approve. Every decision is written to the audit log.
   </p>
 </div>
@@ -119,7 +119,7 @@
   </span>
   <span class="inline-flex items-center gap-1.5 text-slate-600">
     <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-    On-vessel CV counts &amp; thermal readings — <span class="font-medium">simulated</span> (trained fish-scan model is roadmap)
+    On-vessel computer-vision counts &amp; thermal readings — <span class="font-medium">simulated</span> (trained fish-scan model is roadmap)
   </span>
 </div>
 
@@ -150,10 +150,10 @@
           </div>
         </div>
 
-        <!-- On-vessel CV — SIMULATED -->
+        <!-- On-vessel computer vision — SIMULATED -->
         <div class="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
           <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-2">
-            On-Vessel CV (at harvest)
+            On-Vessel Computer Vision (at harvest)
             <span class="normal-case tracking-normal text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">Simulated</span>
           </p>
           <p class="text-gray-700">

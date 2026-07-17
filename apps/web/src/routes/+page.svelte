@@ -108,7 +108,7 @@
       <p class="font-mono text-[10px] text-brand/70 uppercase tracking-widest mb-1">Self-running walkthrough</p>
       <p class="font-display text-base font-bold text-white">▶ Watch the guided demo</p>
       <p class="text-sm text-white/60 mt-1">
-        One real catch, seven agent decisions — vessel CV to ACCFB truck — with live impact counters.
+        One real catch, seven agent decisions — vessel computer vision to ACCFB truck — with live impact counters.
       </p>
     </div>
     <span class="font-mono text-xs font-semibold bg-brand text-white px-4 py-2 rounded-lg

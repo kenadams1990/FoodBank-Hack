@@ -11,7 +11,7 @@
   const STEP_DURATION_MS = 3500;
 
   const STEPS = [
-    { id: 1, icon: '🎣', label: 'On-Vessel CV → Dispatch Decision', agent: 'intake:evaluateCatchLog' },
+    { id: 1, icon: '🎣', label: 'On-Vessel Computer Vision → Dispatch Decision', agent: 'intake:evaluateCatchLog' },
     { id: 2, icon: '📦', label: 'Dockside Sort — Barcoded Bins + Thermal QA', agent: 'intake:sortAtDock' },
     { id: 3, icon: '📊', label: 'Opportunity Score', agent: 'scorer:scoreLot' },
     { id: 4, icon: '💰', label: 'Procurement Counter-Offer', agent: 'procure:draftProcurement' },
@@ -224,13 +224,13 @@
 
             {#if step.id === 1}
               <p class="text-sm text-gray-600 mb-3">
-                On-vessel CV already decided whether to send cold transport — before the boat is
+                On-vessel computer vision already decided whether to send cold transport — before the boat is
                 even at the dock.
               </p>
               <div class="bg-gray-50 rounded-lg p-3 mb-3 text-sm text-gray-700">
                 <span class="font-semibold text-brand-dark">{data.catchLog.vesselName}</span>
                 ({data.catchLog.vesselType}) — {data.catchLog.species}, {data.catchLog.estimatedLbs.toLocaleString()} lbs.
-                CV detected {data.catchLog.cvEstimate.count.toLocaleString()}, avg {data.catchLog.cvEstimate.avgWeightLbs} lbs,
+                Computer vision detected {data.catchLog.cvEstimate.count.toLocaleString()}, avg {data.catchLog.cvEstimate.avgWeightLbs} lbs,
                 grade {data.catchLog.cvEstimate.sizeGrade}, confidence {(data.catchLog.cvEstimate.confidence * 100).toFixed(0)}%.
                 <span class="inline-block ml-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 align-middle">Simulated — trained fish-scan model is roadmap</span>
               </div>
