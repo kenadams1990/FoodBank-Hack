@@ -127,3 +127,38 @@ docs/DEMO_SCRIPT.md for the intake-first story; verify ACCFB §3 figures if time
 - **Next:** real computer-vision hero. The trained fish-scan model (`best.pt`, YOLO weights) is in hand but
   runs off-Cloudflare; wiring a photo→inference endpoint (e.g. a hosted Space) into `/intake` is the follow-up
   so on-vessel CV becomes live rather than simulated.
+
+### 2026-07-18 — Sonnet 5 (brand identity + team Slack setup, no code changes)
+
+**No repo code touched this session** — working tree stayed clean apart from one stray untracked screenshot
+(`apps/web/static/media/guided-demo/videos/Screenshot 2026-07-17 at 11.59.49PM.png`, not created by this
+session, left as-is for Ken to triage). All work below is external deliverables + team infra, not commits.
+
+- **Built TideLift's brand identity** via Pika's `build-a-brand` skill (full brand book mode): 3 direction
+  boards → Ken picked "Control Tower" layout/logo/type + "Tideline" board's color palette, merged → full
+  15-page brand guidelines PDF → full brand kit zip (logo assets, 12 icons, fonts, design tokens, AI
+  prompts). All saved to `~/Desktop`, **not committed to the repo**. See [[tidelift-brand-identity]] memory
+  for the full palette/type spec and file locations — start there if the dashboard's visual design is ever
+  revisited.
+- **Diagnosed and worked around a real Pika `html_to_pdf` bug**: multi-photo pages embed images at source
+  resolution instead of CSS display size, causing both silent 300s timeouts and hard `PDF_OUTPUT_TOO_LARGE`
+  rejections. Fixed by downsampling source photos before referencing them, and for the final assembly, by
+  rendering each page individually via the (reliable) `html_to_png` and merging locally with Pillow instead of
+  fighting the PDF export path further. Wrote a detailed engineering report for Pika's team
+  (`~/Desktop/pika-html-to-pdf-engineering-report-2026-07-17.md`, not in repo). See
+  [[pika-html-to-pdf-image-embedding-bug]] memory for the reusable fix pattern.
+- **Set up team Slack infrastructure:** `TAT Agent` bot (bot user `tat_agent`, `chat:write`+`files:write`,
+  token in 1Password) verified working; posted the brand guidelines PDF + kit to `#images-videos`. Per Ken's
+  request to separate FoodBank-Hack from the rest of the `tat-inc` workspace, created private
+  `#foodbank-hack` channel (7 members invited). **Flagged, not yet resolved:** Pragnaya Priyadarshini
+  (recorded elsewhere as having withdrawn from the project 2026-07-16) was still in the `#images-videos`
+  roster and got invited to `#foodbank-hack` along with everyone else — needs Ken to confirm whether to
+  remove her. Also pending: Ken manually converting `#images-videos`, `#github-project-codebase`, and
+  `#hackathon-food-banks` from public to private (Slack's API can't do this on a non-Enterprise-Grid
+  workspace — UI-only action). Full state in [[hackathon-context]] memory, "Slack workspace restructuring"
+  section.
+
+**Next up:** resolve the Pragnaya channel-membership question; Ken to manually convert the 3 remaining public
+channels to private; otherwise the standing roadmap is unchanged (verify ACCFB §3 figures, bring
+forecast/procure/canning/analyst up to route.ts's bar, wire the dashboard to real agent output, real CV
+inference endpoint for `/intake`).
