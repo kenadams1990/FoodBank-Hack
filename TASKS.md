@@ -25,7 +25,7 @@ Hackathon: AISCO "AI Supply Chain Observatory", Food Banks + AI. Judging July 17
 - [ ] Reconcile `docs/PITCH.md` / `docs/DEMO_SCRIPT.md` narrative with the widened (all-7-themes) scope —
       they still read fishery/canning-first
 - [x] Commit the TideLift design system to the repo (`design-system/`) — tokens, assets, components, Hub screens
-- [ ] Restyle the dashboard from the old light/teal scheme to the Control Tower palette in `design-system/tokens/`
+- [x] Restyle the dashboard from the old light/teal scheme to the Control Tower palette (all 10 routes, live)
 - [ ] Fix the Cloudflare Pages git integration (failing on every push; deploys are manual until then) —
       see the 2026-07-20 log entry for what's been ruled out
 
@@ -197,3 +197,42 @@ inference endpoint for `/intake`).
 changes what people see); fix or replace the CF git integration — the durable option is deploying from GitHub
 Actions, blocked on adding `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` as repo secrets, since
 `kenadams1990/FoodBank-Hack` is a personal repo and the `tatinc23` org secrets do not reach it.
+
+### 2026-07-20 (cont.) — Tide restyle shipped + pitch-deck link
+
+- **Restyled all 10 routes to the Tide "Control Tower" design system** and shipped to production. The site
+  went from the legacy light/teal scheme to the dark palette (Slate Ink page, Deep Tide panels, Salmon as
+  the single per-screen signal; Space Grotesk display + IBM Plex Mono body). Behaviour unchanged — a reskin,
+  not a rewrite; the wired `/intake` pipeline (run → approve/reject → audit) was verified working end-to-end
+  on the built site. Commits `8f604fb` (restyle) + `d4ff495` (merge) + `5a80380` (architecture fix).
+- **Execution:** seeded the foundation myself (app.css tokens in `@layer components` so utility overrides
+  win, Tailwind palette remap with legacy values namespaced, Space Grotesk fonts, a 3-item primary nav +
+  secondary strip in the layout), then dispatched **6 parallel Sonnet subagents** over disjoint file sets
+  (3 hero screens to the extracted pixel spec, 3 secondary clusters for palette consistency). Reviewed every
+  screen in-browser.
+- **Fixes made during review** (beyond the agents): the `@layer` cascade bug in the seeded tokens; the audit
+  page's hardcoded "41 operator decisions" → now derived from real audit data; low-contrast semantic text
+  (`text-ok`/`text-alert` on dark) bumped to the readable `-hi` variants, swept all screens with a contrast
+  checker (zero fails); kept `.wrangler/` dev state and the stray screenshot out of the commit (`.wrangler/`
+  now gitignored).
+- **Architecture page fix:** its whole body was three light-background PNG renders, so it stayed white while
+  the site went dark — a CSS-only restyle couldn't reach it. Rebuilt as native dark Svelte markup (numbered
+  9-step agent rail with source/function tags + infra chips, warm-dark "what's your stack" callout). The
+  PNGs remain on disk, unused.
+- **Landing page:** added a third CTA linking the pitch deck (published as a Claude artifact), alongside the
+  guided demo and the working prototype (`fdc0f3b`).
+- **Committed the `design-system/` bundle** to the repo earlier the same day (`5e11cad`) — 36 MB trimmed to
+  7.2 MB by gitignoring a duplicate pptx + regenerable renders.
+- **Deploy reality:** CF Pages git integration is still broken (now failing on every push), so all of this
+  went out via manual `wrangler pages deploy` from local build output. Production alias verified against the
+  deployed bundle each time. See [[cf-pages-git-integration-broken]].
+- **Gotcha hit:** git SSH signing failed mid-session when the 1Password app locked (sleep/idle) — `ssh-add -l`
+  lists the key but signing can't run without the vault unlocked; not headless-fixable. Ken unlocked to land
+  the final commit. Durable fix is the GUI auto-lock "Never" setting.
+
+**Next up:** verify ACCFB §3 figures; bring forecast/procure/canning/analyst up to route.ts's bar; wire the
+dashboard to real agent output (replace `mockSurplusFeed.ts`); fix the CF git integration (add the two repo
+secrets, deploy from GitHub Actions); real CV inference endpoint for `/intake`. The mobile operator app
+(`design_handoff_website/IMPLEMENTATION-PROMPT.md`) is speced but assumes an operator-auth system the app
+doesn't have — Ken confirmed auth is not needed, so that prompt needs its auth/identity requirements dropped
+before it's actionable.

@@ -95,6 +95,15 @@ with ACCFB's service area per `docs/ACCFB_NUMBERS.md`.
 
 ## Dashboard (`apps/web/`)
 
+**Design system:** the app runs the dark **Tide "Control Tower"** palette live (as of 2026-07-20) — Slate
+Ink page, Deep Tide panels, Salmon as the single per-screen signal; Space Grotesk (display) + IBM Plex Mono
+(body/data). Tokens + component classes live in `src/app.css` (component classes in `@layer components` so
+Tailwind utility overrides win); the Tailwind palette is in `tailwind.config.js` (old light/teal values kept
+as `legacy-*`). Full brand spec + reusable components in `design-system/` and memory [[tidelift-brand-identity]].
+Contrast rule of thumb on the dark theme: use the `-hi` semantic text variants (`text-success-hi`,
+`text-danger-hi`), not the base `text-ok`/`text-alert` (too dark on dark). No emoji or exclamation points in
+product UI.
+
 SvelteKit 4 + Tailwind. Pages: `/` (dashboard), `/intake` (vessel intake — demo centerpiece), `/logistics`
 (lot kanban), `/partners`, `/audit` (approval/audit trail), `/lots/[id]`, `/mock-run` (scripted demo).
 API routes under `src/routes/api/` (lots, approvals, shipments, recommendations, intake, audit) serve from
