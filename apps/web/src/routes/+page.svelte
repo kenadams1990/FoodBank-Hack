@@ -95,8 +95,30 @@
 </div>
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
-<!-- Two ways in: the self-running walkthrough, and the hands-on prototype -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+<!-- Three ways in: the pitch deck, the self-running walkthrough, and the hands-on prototype -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+  <!-- Pitch deck CTA — hosted as a Claude artifact, opens in a new tab -->
+  <a
+    href="https://claude.ai/code/artifact/454250c6-d977-4211-bec3-2ad748096b30"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="flex items-center justify-between gap-4 flex-wrap
+           bg-brand-deep hover:bg-brand rounded-xl p-5 transition-colors group
+           border border-brand/30"
+  >
+    <div>
+      <p class="font-mono text-[10px] text-brand/70 uppercase tracking-widest mb-1">The pitch · 10 slides</p>
+      <p class="font-display text-base font-bold text-white">▶ Read the deck</p>
+      <p class="text-sm text-white/60 mt-1">
+        The problem, the pipeline, and what ACCFB gets — the presentation given at the AISCO judging round.
+      </p>
+    </div>
+    <span class="font-mono text-xs font-semibold bg-brand text-white px-4 py-2 rounded-lg
+                 group-hover:bg-white group-hover:text-brand-deep transition-colors whitespace-nowrap">
+      Open deck →
+    </span>
+  </a>
+
   <!-- Guided demo CTA -->
   <a
     href="/guided-demo"
