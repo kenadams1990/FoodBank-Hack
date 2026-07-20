@@ -4,70 +4,76 @@
 
   $: events = data.events;
   $: total = data.total;
+  $: operatorDecisions = data.operatorDecisions;
   $: pages = Math.ceil(total / 50);
 
-  function entityColor(type: string) {
-    const map: Record<string, string> = {
-      LOT: 'bg-blue-100 text-blue-700',
-      APPROVAL: 'bg-purple-100 text-purple-700',
-      SHIPMENT: 'bg-green-100 text-green-700',
-      FACILITY: 'bg-amber-100 text-amber-700',
-    };
-    return map[type] ?? 'bg-gray-100 text-gray-600';
-  }
-
-  function actionColor(action: string) {
-    if (action.includes('APPROVED')) return 'text-green-600 font-semibold';
-    if (action.includes('REJECTED')) return 'text-red-600 font-semibold';
-    if (action.includes('CREATED')) return 'text-teal-600';
-    return 'text-gray-700';
+  // Status chip derived from the existing action string — same signals the
+  // old actionColor() read (APPROVED / REJECTED / CREATED), remapped to the
+  // Tide chip taxonomy instead of inventing a new status field.
+  function statusInfo(action: string): { label: string; chip: string } {
+    if (action.includes('REJECTED')) return { label: 'REJECTED', chip: 'chip-alert' };
+    if (action === 'APPROVAL_CREATED' || action.includes('PENDING')) return { label: 'PENDING', chip: 'chip-warn' };
+    if (action.includes('APPROVED')) return { label: 'APPROVED', chip: 'chip-ok' };
+    return { label: 'LOGGED', chip: 'chip-ok' };
   }
 </script>
 
-<svelte:head><title>TideLift · Audit Log</title></svelte:head>
+<svelte:head><title>TideLift · Audit Trail</title></svelte:head>
 
-<div class="mb-6 flex items-center justify-between">
-  <div>
-    <h1 class="text-2xl font-bold text-brand-dark">Audit Log</h1>
-    <p class="text-gray-500 text-sm mt-1">Every agent action and operator decision, in order.</p>
-  </div>
-  <span class="text-sm text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{total} events</span>
+<div class="mb-8">
+  <h1 class="font-display font-bold text-foam text-3xl">Audit Trail</h1>
+  <p class="font-mono text-mist text-sm mt-3 max-w-[680px] leading-relaxed">
+    Every agent draft and every operator decision, logged either way. Radical auditability — the record is the product.
+  </p>
 </div>
 
-<div class="bg-white rounded-xl shadow overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-50 border-b border-gray-200">
-      <tr>
-        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</th>
-        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Entity ID</th>
-        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
-        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actor</th>
+<div class="flex flex-wrap items-baseline gap-x-10 gap-y-3 mb-10">
+  <div>
+    <span class="font-display font-bold text-4xl text-foam tabular-nums">{total}</span>
+    <span class="font-mono text-mist text-xs uppercase tracking-wide ml-2">events logged</span>
+  </div>
+  <div>
+    <span class="font-display font-bold text-4xl text-foam tabular-nums">{operatorDecisions}</span>
+    <span class="font-mono text-mist text-xs uppercase tracking-wide ml-2">operator decisions</span>
+  </div>
+  <div>
+    <span class="impact-number text-4xl">0</span>
+    <span class="font-mono text-mist text-xs uppercase tracking-wide ml-2">auto-executed</span>
+  </div>
+</div>
+
+<h2 class="tl-label mb-3">Event Log</h2>
+
+<div class="tl-panel overflow-hidden">
+  <table class="w-full text-sm border-collapse">
+    <thead>
+      <tr class="border-b border-line">
+        <th class="tl-label text-left font-normal px-4 py-3">Timestamp</th>
+        <th class="tl-label text-left font-normal px-4 py-3">Actor</th>
+        <th class="tl-label text-left font-normal px-4 py-3">Action</th>
+        <th class="tl-label text-left font-normal px-4 py-3">Detail</th>
+        <th class="tl-label text-left font-normal px-4 py-3">Status</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-gray-100">
+    <tbody>
       {#each events as ev (ev.id)}
-        <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-4 py-3 text-gray-400 whitespace-nowrap text-xs">
+        <tr class="border-b border-line last:border-b-0">
+          <td class="px-4 py-4 font-mono text-xs text-foam/55 whitespace-nowrap">
             {new Date(ev.timestamp).toLocaleString()}
           </td>
-          <td class="px-4 py-3">
-            <span class="text-xs font-medium rounded-full px-2 py-0.5 {entityColor(ev.entityType)}">
-              {ev.entityType}
-            </span>
+          <td class="px-4 py-4 font-mono text-xs text-mist whitespace-nowrap">{ev.actor}</td>
+          <td class="px-4 py-4 font-mono text-xs text-foam">{ev.action}</td>
+          <td class="px-4 py-4 font-mono text-xs text-mist/90 truncate max-w-[240px]">
+            {ev.entityType.toLowerCase()}:{ev.entityId}
           </td>
-          <td class="px-4 py-3">
-            <span class="font-mono text-xs text-gray-500 truncate max-w-[140px] inline-block">
-              {ev.entityId}
-            </span>
+          <td class="px-4 py-4">
+            <span class={statusInfo(ev.action).chip}>{statusInfo(ev.action).label}</span>
           </td>
-          <td class="px-4 py-3 {actionColor(ev.action)}">{ev.action}</td>
-          <td class="px-4 py-3 text-gray-500 text-xs">{ev.actor}</td>
         </tr>
       {/each}
       {#if events.length === 0}
         <tr>
-          <td colspan="5" class="px-4 py-12 text-center text-gray-400">No audit events yet.</td>
+          <td colspan="5" class="px-4 py-12 text-center font-mono text-xs text-foam/35">No audit events yet.</td>
         </tr>
       {/if}
     </tbody>
@@ -79,8 +85,8 @@
     {#each Array.from({ length: pages }, (_, i) => i + 1) as p}
       <a
         href="?page={p}"
-        class="px-3 py-1.5 rounded-lg border text-sm font-medium transition
-          {data.events.length > 0 ? 'hover:bg-teal-50 hover:border-teal-300' : ''}"
+        class="px-3 py-1.5 rounded-sm border border-line font-mono text-xs text-mist transition-colors
+          {data.events.length > 0 ? 'hover:border-salmon/40 hover:text-foam' : ''}"
       >{p}</a>
     {/each}
   </div>

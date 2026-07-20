@@ -13,14 +13,14 @@
   let error = '';
 
   const statusColors: Record<string, string> = {
-    AVAILABLE: 'bg-blue-100 text-blue-800',
-    SCORED: 'bg-yellow-100 text-yellow-800',
-    PROCUREMENT_PENDING: 'bg-orange-100 text-orange-800',
-    PROCUREMENT_CONFIRMED: 'bg-green-100 text-green-800',
-    IN_PRODUCTION: 'bg-purple-100 text-purple-800',
-    SHIPPED: 'bg-indigo-100 text-indigo-800',
-    DELIVERED: 'bg-gray-100 text-gray-700',
-    EXPIRED: 'bg-red-100 text-red-800',
+    AVAILABLE: 'chip-neutral',
+    SCORED: 'chip-neutral',
+    PROCUREMENT_PENDING: 'chip-warn',
+    PROCUREMENT_CONFIRMED: 'chip-ok',
+    IN_PRODUCTION: 'chip-warn',
+    SHIPPED: 'chip-ok',
+    DELIVERED: 'chip-ok',
+    EXPIRED: 'chip-alert',
   };
 
   onMount(async () => {
@@ -60,18 +60,18 @@
 <svelte:head><title>{lot?.species ?? 'Lot'} — TideLift</title></svelte:head>
 
 {#if loading}
-  <p class="text-gray-400 animate-pulse">Loading lot…</p>
+  <p class="font-mono text-foam/35 animate-pulse">Loading lot…</p>
 {:else if error}
-  <p class="text-red-500">{error}</p>
+  <p class="font-mono text-danger-hi">{error}</p>
 {:else if lot}
   <ExceptionAlerts lots={[lot]} />
 
-  <div class="flex items-start justify-between mb-6">
+  <div class="flex items-start justify-between mb-6 gap-3 flex-wrap">
     <div>
-      <h1 class="text-2xl font-bold text-brand-dark capitalize">{lot.species} — {lot.lbs.toLocaleString()} lbs</h1>
-      <p class="text-gray-500 text-sm mt-1">{lot.landingLocation} · Harvested {lot.harvestDate} · Expires {lot.expiryDate}</p>
+      <h1 class="font-display font-bold text-2xl text-foam capitalize">{lot.species} — {lot.lbs.toLocaleString()} lbs</h1>
+      <p class="font-mono text-mist text-sm mt-1">{lot.landingLocation} · Harvested {lot.harvestDate} · Expires {lot.expiryDate}</p>
     </div>
-    <span class="px-3 py-1 rounded-full text-xs font-semibold {statusColors[lot.status] ?? 'bg-gray-100'}">  {lot.status.replace(/_/g, ' ')}</span>
+    <span class="{statusColors[lot.status] ?? 'chip-neutral'}">{lot.status.replace(/_/g, ' ')}</span>
   </div>
 
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -81,19 +81,19 @@
       { label: 'Discount', value: `${lot.proposedDiscountPct}%` },
       { label: 'Est. Cans', value: Math.floor(lot.lbs * 1.8 * 0.88).toLocaleString() },
     ] as stat}
-      <div class="bg-white rounded-xl border border-gray-100 p-4">
-        <p class="text-xs text-gray-400 uppercase tracking-wider">{stat.label}</p>
-        <p class="text-xl font-bold text-brand-dark mt-1">{stat.value}</p>
+      <div class="tl-panel p-4">
+        <p class="tl-label">{stat.label}</p>
+        <p class="font-display font-bold text-xl text-foam mt-1">{stat.value}</p>
       </div>
     {/each}
   </div>
 
   {#if lot.score !== undefined}
-    <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6">
-      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Opportunity Score</h2>
+    <div class="tl-panel p-5 mb-6">
+      <h2 class="tl-label mb-3">Opportunity Score</h2>
       <div class="flex items-center gap-4 mb-3">
-        <span class="text-5xl font-extrabold text-brand-dark">{lot.score}</span>
-        <span class="text-gray-400">/ 100</span>
+        <span class="impact-number text-5xl">{lot.score}</span>
+        <span class="font-mono text-mist">/ 100</span>
       </div>
       {#if scoreBreakdown}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
@@ -103,15 +103,15 @@
             { label: 'Lot Size', value: scoreBreakdown.lotSize, max: 25 },
             { label: 'Demand Match', value: scoreBreakdown.demandMatch, max: 20 },
           ] as dim}
-            <div class="bg-gray-50 rounded-lg p-3">
-              <p class="text-xs text-gray-400">{dim.label}</p>
-              <p class="font-bold text-brand-dark">{dim.value}<span class="text-gray-400 font-normal">/{dim.max}</span></p>
-              <div class="mt-1 h-1.5 bg-gray-200 rounded-full"><div class="h-1.5 bg-teal-500 rounded-full" style="width:{(Number(dim.value)/dim.max)*100}%"></div></div>
+            <div class="bg-raised rounded-sm p-3">
+              <p class="font-mono text-xs text-mist">{dim.label}</p>
+              <p class="font-mono font-bold text-foam">{dim.value}<span class="text-mist font-normal">/{dim.max}</span></p>
+              <div class="mt-1 h-1.5 bg-white/10 rounded-sm"><div class="h-1.5 bg-mist rounded-sm" style="width:{(Number(dim.value)/dim.max)*100}%"></div></div>
             </div>
           {/each}
         </div>
         {#if scoreBreakdown.rationale}
-          <p class="mt-3 text-xs text-gray-500 italic">{scoreBreakdown.rationale}</p>
+          <p class="mt-3 font-mono text-xs text-mist italic">{scoreBreakdown.rationale}</p>
         {/if}
       {/if}
     </div>
@@ -119,7 +119,7 @@
     <button
       on:click={triggerScore}
       disabled={scoring}
-      class="mb-6 bg-teal-600 hover:bg-teal-700 text-white font-semibold px-5 py-2.5 rounded-lg disabled:opacity-50"
+      class="mb-6 bg-salmon hover:bg-salmon-hi text-ink font-mono font-semibold text-sm px-5 py-2.5 rounded-sm transition-colors disabled:opacity-50"
     >
       {scoring ? 'Scoring…' : 'Score This Lot'}
     </button>
@@ -130,6 +130,6 @@
   {/if}
 
   {#if lot.notes}
-    <p class="mt-4 text-sm text-gray-500 italic">Note: {lot.notes}</p>
+    <p class="mt-4 font-mono text-sm text-mist italic">Note: {lot.notes}</p>
   {/if}
 {/if}

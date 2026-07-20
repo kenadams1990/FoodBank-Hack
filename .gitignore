@@ -23,3 +23,6 @@ best.pt
 *.onnx
 *.pth
 *.weights
+
+# Wrangler local dev state (miniflare cache, KV blobs, tmp bundles)
+.wrangler/

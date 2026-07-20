@@ -42,13 +42,13 @@
 
 <div class="mb-6 flex items-center justify-between">
   <div>
-    <h1 class="text-2xl font-bold text-brand-dark">End-to-End Demo Run</h1>
-    <p class="text-gray-500 text-sm mt-1">Lot 001 — 4,800 lbs Pink Salmon → Canned → Fed</p>
+    <h1 class="font-display font-bold text-2xl text-foam">End-to-End Demo Run</h1>
+    <p class="font-mono text-sm text-mist mt-1">Lot 001 — 4,800 lbs Pink Salmon → Canned → Fed</p>
   </div>
   <button
     on:click={runDemo}
     disabled={running}
-    class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-2.5 rounded-lg disabled:opacity-50"
+    class="bg-salmon hover:bg-salmon-hi text-ink font-semibold font-mono px-6 py-2.5 rounded-sm disabled:opacity-50 transition"
   >
     {running ? 'Running…' : complete ? 'Run Again' : '▶ Run Demo'}
   </button>
@@ -59,23 +59,23 @@
   {#each DEMO_STEPS as step}
     {@const done = currentStep > step.id}
     {@const active = currentStep === step.id}
-    <div class="flex gap-4 items-start bg-white rounded-xl border p-4 transition
-      {done ? 'border-teal-200 bg-teal-50' : active ? 'border-yellow-300 bg-yellow-50' : 'border-gray-100'}">
+    <div class="flex gap-4 items-start bg-deep-tide rounded-sm border p-4 transition
+      {done ? 'border-ok/40 bg-ok/10' : active ? 'border-warn/40 bg-warn/10' : 'border-line'}">
       <span class="text-2xl">{step.icon}</span>
       <div class="flex-1">
         <div class="flex items-center gap-2">
-          <p class="font-semibold text-brand-dark text-sm">{step.label}</p>
+          <p class="font-display font-semibold text-foam text-sm">{step.label}</p>
           {#if step.requiresApproval}
-            <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Requires approval</span>
+            <span class="chip-warn">Requires approval</span>
           {/if}
           {#if done}
-            <span class="text-teal-600 text-xs font-medium">✓ Done</span>
+            <span class="text-success-hi text-xs font-mono font-medium">✓ Done</span>
           {:else if active}
-            <span class="text-yellow-600 text-xs animate-pulse">● Running</span>
+            <span class="text-warn text-xs font-mono animate-pulse">● Running</span>
           {/if}
         </div>
-        <p class="text-xs text-gray-500 mt-1">{step.description}</p>
-        <p class="text-xs text-gray-300 mt-0.5">Agent: {step.agentAction}</p>
+        <p class="text-xs font-mono text-mist mt-1">{step.description}</p>
+        <p class="text-xs font-mono text-foam/30 mt-0.5">Agent: {step.agentAction}</p>
       </div>
     </div>
   {/each}
@@ -83,19 +83,18 @@
 
 <!-- Impact Metrics -->
 {#if impact.lbsRescued > 0}
-  <div class="bg-white rounded-xl border border-gray-100 p-6">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Impact Metrics</h2>
+  <div class="tl-panel p-6">
+    <h2 class="tl-label mb-4">Impact Metrics</h2>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       {#each [
-        { label: 'Food Rescued', value: `${impact.lbsRescued.toLocaleString()} lbs`, icon: '🐟' },
-        { label: 'Cans Produced', value: impact.cansProduced.toLocaleString(), icon: '🥫' },
-        { label: 'Meals Estimated', value: impact.mealsEstimated.toLocaleString(), icon: '🍽️' },
-        { label: 'Cost Avoided', value: `$${impact.costAvoided.toLocaleString()}`, icon: '💸' },
+        { label: 'Food Rescued', value: `${impact.lbsRescued.toLocaleString()} lbs` },
+        { label: 'Cans Produced', value: impact.cansProduced.toLocaleString() },
+        { label: 'Meals Estimated', value: impact.mealsEstimated.toLocaleString() },
+        { label: 'Cost Avoided', value: `$${impact.costAvoided.toLocaleString()}` },
       ] as m}
-        <div class="text-center bg-teal-50 rounded-xl p-4">
-          <p class="text-3xl mb-1">{m.icon}</p>
-          <p class="text-xl font-extrabold text-brand-dark">{m.value}</p>
-          <p class="text-xs text-gray-400 mt-1">{m.label}</p>
+        <div class="text-center bg-raised rounded-sm border border-line p-4">
+          <p class="font-display font-extrabold text-xl text-foam">{m.value}</p>
+          <p class="font-mono text-[10px] text-foam/40 uppercase tracking-wider mt-1">{m.label}</p>
         </div>
       {/each}
     </div>

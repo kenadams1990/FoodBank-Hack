@@ -15,8 +15,8 @@
   }> = [];
 
   const statusColors: Record<string, string> = {
-    'Idle':              'bg-ink/30',
-    'Scanning feed':     'bg-brand',
+    'Idle':              'bg-mist/25',
+    'Scanning feed':     'bg-mist/50',
     'Negotiating':       'bg-warn',
     'Awaiting approval': 'bg-impact',
     'Delivery planned':  'bg-ok',
@@ -31,16 +31,16 @@
   });
 </script>
 
-<div class="bg-white border border-line rounded-xl overflow-hidden">
+<div class="tl-panel overflow-hidden">
   <!-- Header: live status pulse -->
   <div class="flex items-center justify-between px-4 py-3 border-b border-line">
-    <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink/40">Agent Activity</span>
+    <span class="tl-label">Agent Activity</span>
     <span class="flex items-center gap-1.5">
       <span
         class="inline-block w-2 h-2 rounded-full animate-pulse-slow {statusColors[currentStatus]}"
         aria-hidden="true"
       ></span>
-      <span class="font-mono text-xs text-ink/60">{currentStatus}</span>
+      <span class="font-mono text-xs text-mist">{currentStatus}</span>
     </span>
   </div>
 
@@ -53,13 +53,16 @@
           style="animation-delay: {i * 60}ms"
         >
           <!-- Dot -->
-          <span class="mt-1 shrink-0 w-1.5 h-1.5 rounded-full bg-brand/50" aria-hidden="true"></span>
+          <span class="mt-1 shrink-0 w-1.5 h-1.5 rounded-full bg-mist/40" aria-hidden="true"></span>
           <div class="min-w-0">
-            <p class="font-mono text-[11px] text-ink/40">{entry.time}</p>
-            <p class="font-sans text-sm font-medium text-ink leading-tight">{entry.action}</p>
-            <p class="font-mono text-[11px] text-ink/50 truncate">{entry.detail}</p>
+            <p class="font-mono text-[11px] text-foam/35">{entry.time}</p>
+            <p class="font-mono text-sm font-medium text-foam leading-tight">{entry.action}</p>
+            <p class="font-mono text-[11px] text-mist truncate">{entry.detail}</p>
             {#if entry.score != null}
-              <span class="font-mono text-[10px] bg-brand/10 text-brand border border-brand/20 rounded px-1.5 py-0.5 mt-1 inline-block">
+              <span
+                class="font-mono text-[10px] text-salmon border border-salmon/30 rounded-sm px-1.5 py-0.5 mt-1 inline-block"
+                style="background: rgba(232, 101, 74, .08);"
+              >
                 score {entry.score}/100
               </span>
             {/if}
@@ -68,8 +71,8 @@
       {/each}
     {:else}
       <li class="px-4 py-6 text-center">
-        <p class="font-mono text-xs text-ink/30">No activity yet</p>
-        <p class="font-mono text-[10px] text-ink/20 mt-1">Agent will log decisions here</p>
+        <p class="font-mono text-xs text-foam/35">No activity yet</p>
+        <p class="font-mono text-[10px] text-foam/20 mt-1">Agent will log decisions here</p>
       </li>
     {/if}
   </ul>

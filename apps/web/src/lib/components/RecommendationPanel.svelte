@@ -7,9 +7,9 @@
   let notes: Record<string, string> = {};
 
   const sections = [
-    { key: 'procurement', type: 'PROCUREMENT', label: 'Procurement Offer', icon: '💰' },
-    { key: 'canning',     type: 'FACILITY_BOOKING', label: 'Facility Booking', icon: '🏭' },
-    { key: 'delivery',   type: 'DELIVERY_RELEASE', label: 'Delivery Plan', icon: '🚚' },
+    { key: 'procurement', type: 'PROCUREMENT', label: 'Procurement Offer' },
+    { key: 'canning',     type: 'FACILITY_BOOKING', label: 'Facility Booking' },
+    { key: 'delivery',   type: 'DELIVERY_RELEASE', label: 'Delivery Plan' },
   ];
 
   async function act(approvalId: string, sectionKey: string, status: 'APPROVED' | 'REJECTED') {
@@ -84,8 +84,8 @@
 </script>
 
 <div class="space-y-5">
-  <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-    Agent Recommendations <span class="text-gray-400 font-normal normal-case">— Agent recommends. You decide.</span>
+  <h2 class="tl-label">
+    Agent Recommendations <span class="italic normal-case font-normal text-foam/35">— Agent recommends. You decide.</span>
   </h2>
 
   {#each sections as section}
@@ -94,46 +94,46 @@
     {@const draft = getDraft(section.key)}
     {@const rows = Array.isArray(draft) ? draft : draft ? [draft] : []}
 
-    <div class="bg-white rounded-xl border border-gray-100 p-5">
+    <div class="tl-panel p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold text-brand-dark">{section.icon} {section.label}</h3>
+        <h3 class="font-display font-semibold text-foam">{section.label}</h3>
         {#if status === 'approved'}
-          <span class="text-green-600 text-sm font-medium">✓ Approved</span>
+          <span class="chip-ok">✓ Approved</span>
         {:else if status === 'rejected'}
-          <span class="text-red-500 text-sm font-medium">✕ Rejected</span>
+          <span class="chip-alert">✕ Rejected</span>
         {:else}
-          <span class="text-yellow-500 text-sm font-medium">● Pending your decision</span>
+          <span class="chip-warn">● Pending your decision</span>
         {/if}
       </div>
 
       {#if rows.length === 0}
-        <p class="text-sm text-gray-400 mb-4">No draft details available for this step.</p>
+        <p class="font-mono text-sm text-foam/35 mb-4">No draft details available for this step.</p>
       {:else}
         <div class="space-y-3 mb-4">
           {#each rows as row}
             {@const r = row}
-            <div class="bg-gray-50 rounded-lg p-4">
+            <div class="bg-raised rounded-sm p-4">
               {#if reasonOf(r)}
-                <p class="text-sm text-brand-dark leading-relaxed mb-3">{reasonOf(r)}</p>
+                <p class="font-mono text-sm text-foam leading-relaxed mb-3">{reasonOf(r)}</p>
               {/if}
 
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
                 {#each scalarEntries(r) as [k, v]}
                   <div>
-                    <p class="text-[11px] text-gray-400 uppercase tracking-wide">{humanize(k)}</p>
-                    <p class="text-sm font-semibold text-brand-dark">{formatValue(k, v)}</p>
+                    <p class="font-mono text-[11px] text-mist uppercase tracking-wide">{humanize(k)}</p>
+                    <p class="font-mono text-sm font-semibold text-foam">{formatValue(k, v)}</p>
                   </div>
                 {/each}
               </div>
 
               {#each arrayEntries(r) as [k, items]}
                 <div class="mt-3">
-                  <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-1">{humanize(k)}</p>
+                  <p class="font-mono text-[11px] text-mist uppercase tracking-wide mb-1">{humanize(k)}</p>
                   <div class="space-y-1">
                     {#each items as item}
-                      <div class="flex flex-wrap gap-x-4 gap-y-1 bg-white rounded-lg border border-gray-100 px-3 py-2">
+                      <div class="flex flex-wrap gap-x-4 gap-y-1 bg-white/5 rounded-sm border border-line px-3 py-2">
                         {#each scalarEntries(item) as [ik, iv]}
-                          <span class="text-xs"><span class="text-gray-400">{humanize(ik)}:</span> <span class="font-medium text-brand-dark">{formatValue(ik, iv)}</span></span>
+                          <span class="font-mono text-xs"><span class="text-mist">{humanize(ik)}:</span> <span class="font-medium text-foam">{formatValue(ik, iv)}</span></span>
                         {/each}
                       </div>
                     {/each}
@@ -149,18 +149,18 @@
         <textarea
           bind:value={notes[section.key]}
           placeholder="Optional notes for audit log…"
-          class="w-full text-sm border border-gray-200 rounded-lg p-2 mb-3 resize-none h-16"
+          class="w-full font-mono text-sm bg-white/5 border border-line rounded-sm p-2 mb-3 resize-none h-16 text-foam placeholder:text-foam/30 focus:outline-none focus:border-salmon/50"
         />
         <div class="flex gap-3">
           <button
             on:click={() => act(apvId, section.key, 'APPROVED')}
             disabled={approving[section.key]}
-            class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 rounded-lg text-sm disabled:opacity-50"
+            class="flex-1 bg-salmon hover:bg-salmon-hi text-ink font-mono font-semibold py-2 rounded-sm text-sm transition-colors disabled:opacity-50"
           >Approve</button>
           <button
             on:click={() => act(apvId, section.key, 'REJECTED')}
             disabled={approving[section.key]}
-            class="flex-1 border border-red-300 text-red-500 hover:bg-red-50 font-semibold py-2 rounded-lg text-sm disabled:opacity-50"
+            class="flex-1 border border-line text-mist hover:text-danger-hi hover:border-alert/50 font-mono font-semibold py-2 rounded-sm text-sm transition-colors disabled:opacity-50"
           >Reject</button>
         </div>
       {/if}
