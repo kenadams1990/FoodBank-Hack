@@ -1,0 +1,5 @@
+body{font-family:var(--font-mono);font-size:var(--text-body);line-height:var(--leading-body);color:var(--text-primary);background:var(--bg-page);margin:0}
+h1,h2,h3,.display{font-family:var(--font-display)}
+a{color:var(--salmon);text-decoration:none}
+a:hover{color:#EF7D66}
+code,pre,.data{font-family:var(--font-mono);font-variant-numeric:tabular-nums}

@@ -1,0 +1,42 @@
+:root{
+/* ── Core palette (brand guidelines p.06) ── */
+--slate-ink:#1C2B2C; /* background */
+--deep-tide:#123B41; /* panel / surface */
+--salmon:#E8654A;    /* primary signal / accent — one CTA per screen */
+--foam:#F1F7F5;      /* text-on-dark / light surface */
+/* Extended neutrals */
+--ink:#0B0F13;
+--mist:#B9C4CC;
+--fog:#D8E3E0;
+/* Semantic (product UI) */
+--success:#3F6B4F;
+--warning:#E8A33C;
+--danger:#C4432E;
+/* ── Semantic aliases — dark control tower (default) ── */
+--bg-page:var(--slate-ink);
+--surface-panel:var(--deep-tide);
+--surface-raised:#16333A;
+--surface-error:#3A2A22;
+--accent:var(--salmon);
+--text-primary:var(--foam);
+--text-secondary:var(--mist);
+--text-tertiary:rgba(185,196,204,.55);
+--text-on-accent:var(--ink);
+--line:rgba(241,247,245,.08);
+--line-strong:rgba(241,247,245,.16);
+--grid-line:rgba(241,247,245,.05);
+/* ── Semantic aliases — light surfaces (foam cards, print) ── */
+--bg-light:var(--foam);
+--text-on-light:var(--slate-ink);
+--line-on-light:var(--fog);
+/* ── Legacy hackathon-app palette (shipped tidelift.tatinc.us UI; superseded by Tide palette) ── */
+--legacy-teal:#0E7C86;
+--legacy-teal-deep:#094248;
+--legacy-ink:#0B2027;
+--legacy-surface:#F4F7F7;
+--legacy-line:#DDE6E6;
+--legacy-coral:#F26A4B;
+--legacy-warn:#E8B23A;
+--legacy-alert:#D64545;
+--legacy-ok:#2E9E7B;
+}

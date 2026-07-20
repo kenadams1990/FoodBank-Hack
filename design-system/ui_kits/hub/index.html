@@ -1,0 +1,32 @@
+<!-- @dsCard group="Ops Hub" viewport="1280x800" name="Operations Intelligence Hub" subtitle="Dashboard · Vessel Intake · Audit Trail — interactive" -->
+<!-- @startingPoint section="Screens" subtitle="TideLift Operations Intelligence Hub — 3 screens, clickable" viewport="1280x800" -->
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>TideLift · Operations Intelligence Hub</title><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="data.js"></script>
+<style>body{margin:0;background:var(--bg-page);background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);background-size:60px 60px;min-height:100vh}@keyframes tlPulse{0%,100%{opacity:1}50%{opacity:.35}}</style></head><body>
+<div id="root"></div>
+<script type="text/babel" src="Topbar.jsx"></script>
+<script type="text/babel" src="Dashboard.jsx"></script>
+<script type="text/babel" src="Intake.jsx"></script>
+<script type="text/babel" src="Audit.jsx"></script>
+<script type="text/babel">
+const { useState } = React;
+function App() {
+  const [screen, setScreen] = useState(localStorage.getItem('tl-hub-screen') || 'Dashboard');
+  const nav = (s) => { setScreen(s); localStorage.setItem('tl-hub-screen', s); };
+  return (<>
+    <window.HubTopbar active={screen} onNav={nav} />
+    {screen === 'Dashboard' && <window.HubDashboard onOpenLot={() => nav('Intake')} />}
+    {screen === 'Intake' && <window.HubIntake />}
+    {screen === 'Audit' && <window.HubAudit />}
+    <footer style={{ borderTop: '1px solid var(--line)', padding: '16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', marginTop: 32 }}>
+      TIDELIFT · AISCO Hackathon 2026 · Agent recommends. You decide.
+    </footer>
+  </>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body></html>

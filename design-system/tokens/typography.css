@@ -1,0 +1,14 @@
+:root{
+--font-display:'Space Grotesk',sans-serif; /* headlines, wordmark, section titles — weights 500/700 */
+--font-mono:'IBM Plex Mono',monospace;     /* body & data — every metric, log line, label — 400/500/600 */
+/* Hierarchy (brand guidelines p.07) */
+--text-display:64px;   --weight-display:700; --tracking-display:-0.01em;
+--text-h2:40px;        --weight-h2:700;
+--text-h3:28px;        --weight-h3:500;
+--text-body-lg:19px;
+--text-body:16px;
+--text-label:13px;     --weight-label:500;   --tracking-label:0.28em; /* always uppercase */
+--text-body-min:14px;  /* minimum body size in product UI */
+--leading-display:1.05;
+--leading-body:1.55;
+}

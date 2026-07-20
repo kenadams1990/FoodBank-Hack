@@ -1,0 +1,325 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/core/**",
+              "components/product/**",
+              "ui_kits/hub/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Space Grotesk|IBM Plex Mono))/i]",
+        "message": "Font not provided by the design system. Available: Space Grotesk, IBM Plex Mono."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AgentActivityFeed'] > JSXAttribute > JSXIdentifier[name!=/^(?:entries|status|style|key|ref|className|style|children)$/]",
+        "message": "<AgentActivityFeed> doesn't accept that prop. Declared props: entries, status, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ApprovalActions'] > JSXAttribute > JSXIdentifier[name!=/^(?:reason|approveLabel|rejectLabel|state|onApprove|onReject|style|key|ref|className|style|children)$/]",
+        "message": "<ApprovalActions> doesn't accept that prop. Declared props: reason, approveLabel, rejectLabel, state, onApprove, onReject, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ApprovalActions'] > JSXAttribute[name.name='state'] > Literal[value!=/^(?:pending|approved|rejected)$/]",
+        "message": "<ApprovalActions> state must be one of 'pending' | 'approved' | 'rejected'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|size|disabled|onClick|children|style|key|ref|className|style|children)$/]",
+        "message": "<Button> doesn't accept that prop. Declared props: variant, size, disabled, onClick, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|secondary|danger)$/]",
+        "message": "<Button> variant must be one of 'primary' | 'secondary' | 'danger'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|md|lg)$/]",
+        "message": "<Button> size must be one of 'sm' | 'md' | 'lg'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute > JSXIdentifier[name!=/^(?:tone|icon|children|style|key|ref|className|style|children)$/]",
+        "message": "<Chip> doesn't accept that prop. Declared props: tone, icon, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:ok|warn|alert|neutral|accent)$/]",
+        "message": "<Chip> tone must be one of 'ok' | 'warn' | 'alert' | 'neutral' | 'accent'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DeliveryPlanTable'] > JSXAttribute > JSXIdentifier[name!=/^(?:columns|rows|style|key|ref|className|style|children)$/]",
+        "message": "<DeliveryPlanTable> doesn't accept that prop. Declared props: columns, rows, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ExceptionAlert'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|items|style|key|ref|className|style|children)$/]",
+        "message": "<ExceptionAlert> doesn't accept that prop. Declared props: title, items, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FlowStrip'] > JSXAttribute > JSXIdentifier[name!=/^(?:stages|activeIndex|style|key|ref|className|style|children)$/]",
+        "message": "<FlowStrip> doesn't accept that prop. Declared props: stages, activeIndex, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Icon'] > JSXAttribute > JSXIdentifier[name!=/^(?:name|size|color|style|key|ref|className|style|children)$/]",
+        "message": "<Icon> doesn't accept that prop. Declared props: name, size, color, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ImpactNumber'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|unit|accent|size|style|key|ref|className|style|children)$/]",
+        "message": "<ImpactNumber> doesn't accept that prop. Declared props: value, unit, accent, size, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Label'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|color|style|key|ref|className|style|children)$/]",
+        "message": "<Label> doesn't accept that prop. Declared props: children, color, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Logo'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|on|size|style|key|ref|className|style|children)$/]",
+        "message": "<Logo> doesn't accept that prop. Declared props: variant, on, size, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Logo'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:lockup|mark|compact)$/]",
+        "message": "<Logo> variant must be one of 'lockup' | 'mark' | 'compact'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Logo'] > JSXAttribute[name.name='on'] > Literal[value!=/^(?:dark|light)$/]",
+        "message": "<Logo> on must be one of 'dark' | 'light'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Readout'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|style|key|ref|className|style|children)$/]",
+        "message": "<Readout> doesn't accept that prop. Declared props: children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SurplusCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:species|vessel|lotId|lbs|discountPct|tempC|daysLeft|score|onClick|style|key|ref|className|style|children)$/]",
+        "message": "<SurplusCard> doesn't accept that prop. Declared props: species, vessel, lotId, lbs, discountPct, tempC, daysLeft, score, onClick, style."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "AgentActivityFeed": {
+        "replaces": []
+      },
+      "ApprovalActions": {
+        "replaces": []
+      },
+      "Button": {
+        "replaces": []
+      },
+      "Chip": {
+        "replaces": []
+      },
+      "DeliveryPlanTable": {
+        "replaces": []
+      },
+      "ExceptionAlert": {
+        "replaces": []
+      },
+      "FlowStrip": {
+        "replaces": []
+      },
+      "Icon": {
+        "replaces": []
+      },
+      "ImpactNumber": {
+        "replaces": []
+      },
+      "Label": {
+        "replaces": []
+      },
+      "Logo": {
+        "replaces": []
+      },
+      "Readout": {
+        "replaces": []
+      },
+      "SurplusCard": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--accent",
+      "--bg-light",
+      "--bg-page",
+      "--border-hairline",
+      "--border-strong",
+      "--danger",
+      "--deep-tide",
+      "--dur-base",
+      "--dur-fast",
+      "--ease-out",
+      "--foam",
+      "--fog",
+      "--font-display",
+      "--font-mono",
+      "--grid-line",
+      "--icon-grid",
+      "--icon-stroke",
+      "--ink",
+      "--leading-body",
+      "--leading-display",
+      "--legacy-alert",
+      "--legacy-coral",
+      "--legacy-ink",
+      "--legacy-line",
+      "--legacy-ok",
+      "--legacy-surface",
+      "--legacy-teal",
+      "--legacy-teal-deep",
+      "--legacy-warn",
+      "--line",
+      "--line-on-light",
+      "--line-strong",
+      "--mist",
+      "--radius-0",
+      "--radius-md",
+      "--radius-pill",
+      "--radius-sm",
+      "--salmon",
+      "--shadow-none",
+      "--slate-ink",
+      "--space-1",
+      "--space-2",
+      "--space-3",
+      "--space-4",
+      "--space-5",
+      "--space-6",
+      "--space-7",
+      "--space-8",
+      "--space-9",
+      "--success",
+      "--surface-error",
+      "--surface-panel",
+      "--surface-raised",
+      "--text-body",
+      "--text-body-lg",
+      "--text-body-min",
+      "--text-display",
+      "--text-h2",
+      "--text-h3",
+      "--text-label",
+      "--text-on-accent",
+      "--text-on-light",
+      "--text-primary",
+      "--text-secondary",
+      "--text-tertiary",
+      "--tracking-display",
+      "--tracking-label",
+      "--warning",
+      "--weight-display",
+      "--weight-h2",
+      "--weight-h3",
+      "--weight-label"
+    ],
+    "tokenKinds": {
+      "--slate-ink": "color",
+      "--deep-tide": "color",
+      "--salmon": "color",
+      "--foam": "color",
+      "--ink": "color",
+      "--mist": "color",
+      "--fog": "color",
+      "--success": "color",
+      "--warning": "color",
+      "--danger": "color",
+      "--bg-page": "color",
+      "--surface-panel": "color",
+      "--surface-raised": "color",
+      "--surface-error": "color",
+      "--accent": "color",
+      "--text-primary": "font",
+      "--text-secondary": "font",
+      "--text-tertiary": "font",
+      "--text-on-accent": "font",
+      "--line": "color",
+      "--line-strong": "color",
+      "--grid-line": "color",
+      "--bg-light": "color",
+      "--text-on-light": "font",
+      "--line-on-light": "color",
+      "--legacy-teal": "color",
+      "--legacy-teal-deep": "color",
+      "--legacy-ink": "color",
+      "--legacy-surface": "color",
+      "--legacy-line": "color",
+      "--legacy-coral": "color",
+      "--legacy-warn": "color",
+      "--legacy-alert": "color",
+      "--legacy-ok": "color",
+      "--font-display": "font",
+      "--font-mono": "font",
+      "--text-display": "font",
+      "--weight-display": "font",
+      "--tracking-display": "font",
+      "--text-h2": "font",
+      "--weight-h2": "font",
+      "--text-h3": "font",
+      "--weight-h3": "font",
+      "--text-body-lg": "font",
+      "--text-body": "font",
+      "--text-label": "font",
+      "--weight-label": "font",
+      "--tracking-label": "font",
+      "--text-body-min": "font",
+      "--leading-display": "font",
+      "--leading-body": "font",
+      "--space-1": "spacing",
+      "--space-2": "spacing",
+      "--space-3": "spacing",
+      "--space-4": "spacing",
+      "--space-5": "spacing",
+      "--space-6": "spacing",
+      "--space-7": "spacing",
+      "--space-8": "spacing",
+      "--space-9": "spacing",
+      "--radius-0": "radius",
+      "--radius-sm": "radius",
+      "--radius-md": "radius",
+      "--radius-pill": "radius",
+      "--border-hairline": "color",
+      "--border-strong": "color",
+      "--shadow-none": "shadow",
+      "--icon-stroke": "color",
+      "--icon-grid": "spacing",
+      "--ease-out": "other",
+      "--dur-fast": "other",
+      "--dur-base": "other"
+    },
+    "fontFamilies": [
+      "IBM Plex Mono",
+      "Space Grotesk"
+    ]
+  }
+}

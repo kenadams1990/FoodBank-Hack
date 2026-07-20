@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Mobile App" description="Working TideLift mobile ops app — approve agent drafts, ask the Analyst (live AI)" -->
+<helmet><script src="./ds-base.js"></script><style>body{margin:0;background:#0B0F13;background-image:linear-gradient(rgba(241,247,245,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(241,247,245,.05) 1px,transparent 1px);background-size:60px 60px}@keyframes tlPulse{0%,100%{opacity:1}50%{opacity:.35}}.tlc-alert{color:#E4715A;border-color:rgba(196,67,46,.5)}.tlc-warn{color:#E8A33C;border-color:rgba(232,163,60,.4)}.tlc-ok{color:#7FA98C;border-color:rgba(63,107,79,.5)}.tlc-neutral{color:#B9C4CC;border-color:rgba(241,247,245,.16)}.tlp-ok{color:#7FA98C}.tlp-off{color:rgba(185,196,204,.55)}.tlp-pending{color:#E8654A}.tld-ok{background:rgba(63,107,79,.14);border-color:rgba(63,107,79,.5);color:#7FA98C}.tld-no{background:rgba(241,247,245,.04);border-color:rgba(241,247,245,.16);color:rgba(185,196,204,.8)}.tlm-user{align-self:flex-end;background:#123B41;color:#F1F7F5}.tlm-ai{align-self:flex-start;background:rgba(241,247,245,.03);color:#D8E3E0}.tlt-on{font-weight:600;color:#E8654A}.tlt-off{font-weight:400;color:rgba(185,196,204,.55)}.tlb-on{background:#E8654A}.tlb-off{background:transparent}</style></helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="390px,844px">
+<div style="display:flex;flex-direction:column;height:100%;background:#1C2B2C;font-family:'IBM Plex Mono',monospace;color:#F1F7F5;padding-top:59px;box-sizing:border-box">
+  <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:#0B0F13;border-bottom:1px solid rgba(241,247,245,.08)">
+    <svg width="18" height="18" viewBox="0 0 24 24"><rect x="2" y="16" width="4" height="6" fill="#E8654A"></rect><rect x="8" y="12" width="4" height="10" fill="#E8654A"></rect><rect x="14" y="8" width="4" height="14" fill="#E8654A"></rect><circle cx="16" cy="4" r="2" fill="#E8654A"></circle></svg>
+    <span style="font-weight:500;font-size:12px;letter-spacing:0.28em;color:#F1F7F5">TIDELIFT</span>
+    <span style="margin-left:auto;font-size:10px;color:rgba(241,247,245,.35)">{{ headerTag }}</span>
+  </div>
+  <div style="flex:1;overflow-y:auto;min-height:0">
+
+  <sc-if value="{{ isFeed }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:16px">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+        <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;letter-spacing:-0.01em">{{ totalLbs }}</span>
+        <span style="font-size:11px;color:rgba(185,196,204,.55)">lbs</span>
+        <span style="font-size:15px;color:rgba(241,247,245,.25)">→</span>
+        <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;letter-spacing:-0.01em;color:#E8654A">{{ totalMeals }}</span>
+        <span style="font-size:11px;color:rgba(185,196,204,.55)">meals</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px">
+        <span style="width:6px;height:6px;border-radius:99px;background:#7FA98C;animation:tlPulse 3s infinite"></span>
+        <span style="font-size:10px;letter-spacing:0.28em;color:#7FA98C">LIVE</span>
+        <span style="font-size:10px;color:rgba(241,247,245,.25);margin-left:auto">meals = lbs ÷ 1.2</span>
+      </div>
+      <div style="font-size:11px;font-weight:500;letter-spacing:0.28em;color:rgba(185,196,204,.55);margin-bottom:10px">AVAILABLE SURPLUS</div>
+      <sc-for list="{{ lots }}" as="lot" hint-placeholder-count="4">
+        <div onClick="{{ lot.open }}" style="background:#123B41;border:1px solid rgba(241,247,245,.08);border-radius:2px;padding:14px;margin-bottom:10px;cursor:pointer;min-height:44px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px">{{ lot.species }}</div>
+              <div style="font-size:10.5px;color:rgba(185,196,204,.55);margin-top:2px">{{ lot.vessel }} · {{ lot.lotId }}</div>
+            </div>
+            <span style="font-size:11px;color:#E8654A;border:1px solid rgba(232,101,74,.4);background:rgba(232,101,74,.1);padding:2px 7px;border-radius:2px">{{ lot.score }}/100</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:10px">
+            <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px">{{ lot.lbsFmt }}</span>
+            <span style="font-size:10.5px;color:rgba(185,196,204,.55)">lbs</span>
+            <span class="{{ lot.tempClass }}" style="margin-left:auto;font-size:11px;padding:2px 7px;border-radius:2px;border-width:1px;border-style:solid;white-space:nowrap;flex-shrink:0">{{ lot.tempC }}°C</span>
+            <span class="{{ lot.urgClass }}" style="font-size:11px;padding:2px 7px;border-radius:2px;border-width:1px;border-style:solid;white-space:nowrap;flex-shrink:0">{{ lot.daysLeft }}d left</span>
+          </div>
+          <div class="{{ lot.phaseClass }}" style="font-size:11px;margin-top:8px">{{ lot.phaseLabel }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLot }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:16px">
+      <div onClick="{{ backToFeed }}" style="font-size:12px;color:rgba(185,196,204,.7);margin-bottom:12px;cursor:pointer;min-height:44px;display:flex;align-items:center">← Surplus feed</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px">{{ lotSpecies }}</div>
+      <div style="font-size:11px;color:rgba(185,196,204,.55);margin-top:2px;margin-bottom:14px">{{ lotVessel }} · {{ lotId }} · {{ lotLbs }} lbs</div>
+      <div style="background:rgba(241,247,245,.03);border:1px solid rgba(241,247,245,.08);border-radius:2px;padding:10px 12px;margin-bottom:12px">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+          <span style="font-size:10px;font-weight:500;letter-spacing:0.28em;color:rgba(185,196,204,.55)">ON-VESSEL CV</span>
+          <span style="font-size:10px;color:#E8A33C;border:1px solid rgba(232,163,60,.4);background:rgba(232,163,60,.1);padding:1px 6px;border-radius:2px">Simulated</span>
+        </div>
+        <div style="font-size:12px;color:#B9C4CC;line-height:1.5">{{ lotCv }}</div>
+      </div>
+      <div style="background:#123B41;border:1px solid rgba(241,247,245,.08);border-radius:2px;padding:12px;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:500;letter-spacing:0.28em;color:rgba(232,101,74,.8);margin-bottom:6px">AGENT DRAFT</div>
+        <div style="font-size:12.5px;color:#F1F7F5;line-height:1.6">{{ lotRationale }}</div>
+        <div style="display:flex;gap:16px;margin-top:10px;border-top:1px solid rgba(241,247,245,.08);padding-top:10px">
+          <div><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px">{{ lotOffer }}</div><div style="font-size:10px;color:rgba(185,196,204,.55)">counter-offer /lb</div></div>
+          <div><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px">{{ lotSavings }}</div><div style="font-size:10px;color:rgba(185,196,204,.55)">saved vs market</div></div>
+          <div><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:#E8654A">{{ lotMeals }}</div><div style="font-size:10px;color:rgba(185,196,204,.55)">meals</div></div>
+        </div>
+      </div>
+      <div style="font-size:10px;font-weight:500;letter-spacing:0.28em;color:rgba(185,196,204,.55);margin-bottom:8px">DOCKSIDE BINS — THERMAL QA</div>
+      <sc-for list="{{ lotBins }}" as="bin" hint-placeholder-count="3">
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;color:#B9C4CC;padding:8px 2px;border-bottom:1px solid rgba(241,247,245,.08)">
+          <span>{{ bin.id }}</span><span style="margin-left:auto">{{ bin.lbs }} lbs</span><span>{{ bin.temp }}°C</span>
+          <span class="{{ bin.qaClass }}" style="font-size:10.5px;padding:1px 7px;border-radius:2px;border-width:1px;border-style:solid">{{ bin.qa }}</span>
+        </div>
+      </sc-for>
+      <sc-if value="{{ lotPending }}" hint-placeholder-val="{{ true }}">
+        <div style="font-size:11px;color:rgba(185,196,204,.55);margin:14px 0 10px">Pending approval logged · Agent recommends. You decide.</div>
+        <div style="display:flex;gap:10px">
+          <button onClick="{{ rejectLot }}" style="flex:1;min-height:48px;background:transparent;border:1px solid rgba(241,247,245,.16);border-radius:2px;color:#F1F7F5;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;cursor:pointer">Reject</button>
+          <button onClick="{{ approveLot }}" style="flex:1.4;min-height:48px;background:#E8654A;border:none;border-radius:2px;color:#0B0F13;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;cursor:pointer">Approve dispatch</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ lotDecided }}" hint-placeholder-val="{{ false }}">
+        <div class="{{ decidedClass }}" style="margin-top:14px;font-size:13px;padding:12px;border-radius:2px;border-width:1px;border-style:solid">{{ decidedMsg }}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isAnalyst }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;height:100%;padding:16px;box-sizing:border-box">
+      <div style="font-size:11px;font-weight:500;letter-spacing:0.28em;color:rgba(185,196,204,.55);margin-bottom:4px">ANALYST AGENT</div>
+      <div style="font-size:11px;color:rgba(241,247,245,.35);margin-bottom:12px">Plain-language Q&amp;A — no SQL, no tickets. Live AI.</div>
+      <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;min-height:0">
+        <sc-for list="{{ messages }}" as="m" hint-placeholder-count="1">
+          <div class="{{ m.cls }}" style="max-width:85%;border:1px solid rgba(241,247,245,.08);border-radius:2px;padding:10px 12px;font-size:12.5px;line-height:1.6;white-space:pre-wrap">{{ m.text }}</div>
+        </sc-for>
+        <sc-if value="{{ thinking }}" hint-placeholder-val="{{ false }}">
+          <div style="align-self:flex-start;font-size:11px;color:rgba(185,196,204,.55)"><span style="animation:tlPulse 1.2s infinite">Analyst is reading the ops log…</span></div>
+        </sc-if>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" placeholder="e.g. What's at risk today?" style="flex:1;min-height:48px;background:rgba(241,247,245,.05);border:1px solid rgba(241,247,245,.16);border-radius:2px;color:#F1F7F5;font-family:'IBM Plex Mono',monospace;font-size:13px;padding:0 12px;outline:none"></input>
+        <button onClick="{{ send }}" style="min-width:64px;min-height:48px;background:#E8654A;border:none;border-radius:2px;color:#0B0F13;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;cursor:pointer">Ask</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:16px">
+      <div style="font-size:11px;font-weight:500;letter-spacing:0.28em;color:rgba(185,196,204,.55);margin-bottom:12px">AUDIT TRAIL</div>
+      <sc-for list="{{ audit }}" as="e" hint-placeholder-count="4">
+        <div style="display:flex;gap:10px;padding:10px 2px;border-bottom:1px solid rgba(241,247,245,.08)">
+          <span style="margin-top:5px;width:6px;height:6px;border-radius:99px;background:rgba(232,101,74,.55);flex-shrink:0"></span>
+          <div>
+            <div style="font-size:10.5px;color:rgba(185,196,204,.55)">{{ e.time }} · {{ e.actor }}</div>
+            <div style="font-size:12.5px;color:#F1F7F5;font-weight:500;margin-top:1px">{{ e.action }}</div>
+            <div style="font-size:11px;color:#B9C4CC;margin-top:1px">{{ e.detail }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  </div>
+  <div style="display:flex;border-top:1px solid rgba(241,247,245,.08);background:#0B0F13">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+      <div onClick="{{ t.go }}" style="flex:1;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer">
+        <span class="{{ t.cls }}" style="font-size:11px;letter-spacing:0.18em">{{ t.label }}</span>
+        <span class="{{ t.barCls }}" style="width:16px;height:2px"></span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;460px&quot;,&quot;height&quot;:&quot;940px&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'feed', activeLotId: null, input: '', thinking: false,
+    phases: {}, rationales: {},
+    messages: [{ role: 'assistant', text: "Shift-start brief: 6,160 lbs across 4 lots. Halibut lot-0045 has a 4.6\u00B0C thermal flag and expires in 2d \u2014 review first. Ask me anything about today's ops." }],
+    audit: [
+      { time: '09:14', actor: 'agent:intake', action: 'Scored lot', detail: 'F/V Morning Star \u00B7 Salmon \u00B7 87/100' },
+      { time: '09:11', actor: 'agent:procure', action: 'Drafted offer', detail: 'Monterey Harbor \u00B7 Sardine @ 30%' },
+      { time: '08:52', actor: 'agent:intake', action: 'Thermal flag', detail: '4.6\u00B0C on lot-0045 bin-03 \u00B7 hold recommended' },
+      { time: '08:31', actor: 'agent:route', action: 'Delivery planned', detail: 'Oakland Canning Co \u2192 ACCFB' },
+    ],
+  };
+  lots = [
+    { lotId: 'lot-0043', species: 'Salmon', vessel: 'F/V Morning Star', lbs: 1700, tempC: 3.2, daysLeft: 5, score: 87, offer: '$2.10', savings: '$1,008', cv: '212 detected \u00B7 avg 8.0 lbs \u00B7 grade M \u00B7 confidence 91%' },
+    { lotId: 'lot-0044', species: 'Sardine', vessel: 'Monterey Harbor', lbs: 2400, tempC: 2.8, daysLeft: 3, score: 74, offer: '$0.85', savings: '$612', cv: '3,400 detected \u00B7 avg 0.7 lbs \u00B7 grade S \u00B7 confidence 88%' },
+    { lotId: 'lot-0045', species: 'Halibut', vessel: 'F/V Pacific Dawn', lbs: 1200, tempC: 4.6, daysLeft: 2, score: 62, offer: '$3.40', savings: '$540', cv: '96 detected \u00B7 avg 12.5 lbs \u00B7 grade L \u00B7 confidence 84%' },
+    { lotId: 'lot-0046', species: 'Rockfish', vessel: 'F/V Sea Verde', lbs: 860, tempC: 3.0, daysLeft: 6, score: 69, offer: '$1.60', savings: '$318', cv: '140 detected \u00B7 avg 6.1 lbs \u00B7 grade M \u00B7 confidence 90%' },
+  ];
+  bins = {
+    'lot-0043': [{ id: 'BIN-A1', lbs: '540', temp: '2.8', qa: 'PASS' }, { id: 'BIN-A2', lbs: '480', temp: '3.4', qa: 'PASS' }, { id: 'BIN-A3', lbs: '420', temp: '3.1', qa: 'PASS' }, { id: 'BIN-A4', lbs: '260', temp: '3.0', qa: 'PASS' }],
+    'lot-0044': [{ id: 'BIN-B1', lbs: '900', temp: '2.6', qa: 'PASS' }, { id: 'BIN-B2', lbs: '820', temp: '2.8', qa: 'PASS' }, { id: 'BIN-B3', lbs: '680', temp: '3.0', qa: 'PASS' }],
+    'lot-0045': [{ id: 'BIN-C1', lbs: '440', temp: '3.6', qa: 'PASS' }, { id: 'BIN-C2', lbs: '380', temp: '3.9', qa: 'PASS' }, { id: 'BIN-C3', lbs: '380', temp: '4.6', qa: 'FLAG' }],
+    'lot-0046': [{ id: 'BIN-D1', lbs: '460', temp: '2.9', qa: 'PASS' }, { id: 'BIN-D2', lbs: '400', temp: '3.0', qa: 'PASS' }],
+  };
+  fallbackReason(l) {
+    return 'Draft: buy ' + l.lbs.toLocaleString() + ' lbs ' + l.species.toLowerCase() + ' at ' + l.offer + '/lb (' + l.savings + ' below market), book Oakland Canning Co, route to ACCFB. Score ' + l.score + '/100' + (l.tempC > 4 ? ' \u2014 thermal flag ' + l.tempC + '\u00B0C: one bin excluded from dispatch.' : '.');
+  }
+  openLot(l) {
+    this.setState({ activeLotId: l.lotId, screen: 'lot' });
+    if (!this.state.rationales[l.lotId]) {
+      const fb = this.fallbackReason(l);
+      this.setState(s => ({ rationales: { ...s.rationales, [l.lotId]: 'Drafting rationale\u2026' } }));
+      const sys = 'You are the TideLift procurement agent. Voice: precise, calm, evidentiary. One or two short sentences, lead with numbers, no hype words, no exclamation points. State the draft recommendation and its reason.';
+      const p = 'Lot: ' + l.lbs + ' lbs ' + l.species + ' from ' + l.vessel + ', surface temp ' + l.tempC + 'C (threshold 4C), expires in ' + l.daysLeft + ' days, opportunity score ' + l.score + '/100, counter-offer ' + l.offer + '/lb saving ' + l.savings + ' vs market. Facility: Oakland Canning Co. Destination: ACCFB. Write the draft rationale.';
+      window.claude.complete({ system: sys, messages: [{ role: 'user', content: p }], max_tokens: 200 })
+        .then(t => this.setState(s => ({ rationales: { ...s.rationales, [l.lotId]: t.trim() } })))
+        .catch(() => this.setState(s => ({ rationales: { ...s.rationales, [l.lotId]: fb } })));
+    }
+  }
+  decide(status) {
+    const l = this.lots.find(x => x.lotId === this.state.activeLotId);
+    const now = new Date();
+    const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    this.setState(s => ({
+      phases: { ...s.phases, [l.lotId]: status },
+      audit: [{ time, actor: 'operator:you', action: status === 'approved' ? 'APPROVE' : 'REJECT', detail: l.lotId + ' \u00B7 ' + l.species + ' \u00B7 ' + l.lbs.toLocaleString() + ' lbs' + (status === 'approved' ? ' \u2192 PROCUREMENT_CONFIRMED' : ' \u2192 HOLD') }, ...s.audit],
+    }));
+  }
+  send() {
+    const q = this.state.input.trim();
+    if (!q || this.state.thinking) return;
+    const msgs = [...this.state.messages, { role: 'user', text: q }];
+    this.setState({ messages: msgs, input: '', thinking: true });
+    const ops = this.lots.map(l => l.lotId + ': ' + l.lbs + ' lbs ' + l.species + ' from ' + l.vessel + ', temp ' + l.tempC + 'C, expires ' + l.daysLeft + 'd, score ' + l.score + '/100, offer ' + l.offer + '/lb, status ' + (this.state.phases[l.lotId] || 'pending approval')).join('\n');
+    const auditTxt = this.state.audit.map(a => a.time + ' ' + a.actor + ' ' + a.action + ' ' + a.detail).join('\n');
+    const sys = 'You are the TideLift Analyst Agent: plain-language ops Q&A for food bank supply chain staff. Voice: precise, calm, evidentiary, quietly fast. Lead with real numbers. Short answers (2-4 sentences). No hype, no exclamation points, no emoji. meals = lbs / 1.2. Thermal threshold 4C.\n\nCURRENT OPS DATA:\n' + ops + '\n\nAUDIT LOG:\n' + auditTxt;
+    const history = msgs.slice(-8).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
+    window.claude.complete({ system: sys, messages: history, max_tokens: 400 })
+      .then(t => this.setState(s => ({ thinking: false, messages: [...s.messages, { role: 'assistant', text: t.trim() }] })))
+      .catch(() => this.setState(s => ({ thinking: false, messages: [...s.messages, { role: 'assistant', text: 'Connection issue \u2014 could not reach the model. The data above is still current: ' + this.lots.reduce((a, l) => a + l.lbs, 0).toLocaleString() + ' lbs across ' + this.lots.length + ' lots, one thermal flag on lot-0045.' }] })));
+  }
+  renderVals() {
+    const s = this.state;
+    const chip = (tone) => 'tlc-' + tone;
+    const lots = this.lots.map(l => {
+      const ph = s.phases[l.lotId];
+      return { ...l, lbsFmt: l.lbs.toLocaleString(), tempClass: chip(l.tempC > 4 ? 'alert' : l.tempC > 3 ? 'warn' : 'ok'), urgClass: chip(l.daysLeft <= 2 ? 'alert' : l.daysLeft <= 4 ? 'warn' : 'neutral'),
+        phaseLabel: ph === 'approved' ? '\u2713 Approved \u2014 PROCUREMENT_CONFIRMED' : ph === 'rejected' ? 'Rejected \u2014 HOLD' : '\u25CF Pending your decision',
+        phaseClass: ph === 'approved' ? 'tlp-ok' : ph === 'rejected' ? 'tlp-off' : 'tlp-pending',
+        open: () => this.openLot(l) };
+    });
+    const al = this.lots.find(x => x.lotId === s.activeLotId) || this.lots[0];
+    const phase = s.phases[al.lotId];
+    const bins = (this.bins[al.lotId] || []).map(b => ({ ...b, qaClass: chip(b.qa === 'FLAG' ? 'alert' : 'ok') }));
+    const totalLbs = this.lots.reduce((a, l) => a + l.lbs, 0);
+    const mkTab = (label, key) => { const on = s.screen === key || (key === 'feed' && s.screen === 'lot'); return { label, cls: on ? 'tlt-on' : 'tlt-off', barCls: on ? 'tlb-on' : 'tlb-off', go: () => this.setState({ screen: key }) }; };
+    return {
+      headerTag: 'Agent recommends. You decide.',
+      isFeed: s.screen === 'feed', isLot: s.screen === 'lot', isAnalyst: s.screen === 'analyst', isAudit: s.screen === 'audit',
+      totalLbs: totalLbs.toLocaleString(), totalMeals: Math.round(totalLbs / 1.2).toLocaleString(),
+      lots, tabs: [mkTab('SURPLUS', 'feed'), mkTab('ANALYST', 'analyst'), mkTab('AUDIT', 'audit')],
+      lotSpecies: al.species, lotVessel: al.vessel, lotId: al.lotId, lotLbs: al.lbs.toLocaleString(), lotCv: al.cv,
+      lotRationale: s.rationales[al.lotId] || 'Drafting rationale\u2026', lotOffer: al.offer, lotSavings: al.savings,
+      lotMeals: Math.round(al.lbs / 1.2).toLocaleString(), lotBins: bins,
+      lotPending: !phase, lotDecided: !!phase,
+      decidedClass: phase === 'approved' ? 'tld-ok' : 'tld-no',
+      decidedMsg: phase === 'approved' ? '\u2713 Approved \u2014 logged to audit trail. Lot moved to PROCUREMENT_CONFIRMED; ACCFB shipment scheduled.' : 'Rejected \u2014 logged to audit trail. Lot held.',
+      approveLot: () => this.decide('approved'), rejectLot: () => this.decide('rejected'),
+      backToFeed: () => this.setState({ screen: 'feed' }),
+      messages: s.messages.map(m => ({ ...m, cls: m.role === 'user' ? 'tlm-user' : 'tlm-ai' })),
+      audit: s.audit,
+      thinking: s.thinking, input: s.input,
+      onInput: (e) => this.setState({ input: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') this.send(); },
+      send: () => this.send(),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# Kept locally, deliberately out of the repo.
+
+# Byte-identical duplicate (md5 b678e2e9…) of the copy already committed at
+# apps/web/static/media/guided-demo/other media/TideLift_Present.pptx — 17 MB.
+uploads/TideLift_Present.pptx
+
+# Derived reference material: brand-PDF page renders + pitch-deck media extracted
+# from the two source files above. ~11 MB, regenerable, read-only context for the
+# design system rather than part of it.
+extracted/
+
+# macOS / tooling artifacts
+.thumbnail

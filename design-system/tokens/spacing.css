@@ -1,0 +1,17 @@
+:root{
+/* 4px base scale */
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:64px;--space-9:96px;
+/* Corners — the system is flat and precise; sharp by default */
+--radius-0:0;--radius-sm:2px;--radius-md:4px;--radius-pill:999px;
+/* Borders */
+--border-hairline:1px solid var(--line);
+--border-strong:1px solid var(--line-strong);
+/* Shadows — none. Brand forbids drop shadows, gradients, glassmorphism. */
+--shadow-none:none;
+/* Icon system (Lucide) */
+--icon-stroke:1.5px;--icon-grid:24px;
+/* Motion — quiet, fast */
+--ease-out:cubic-bezier(.2,.8,.2,1); /* @kind other */
+--dur-fast:120ms; /* @kind other */
+--dur-base:200ms; /* @kind other */
+}
