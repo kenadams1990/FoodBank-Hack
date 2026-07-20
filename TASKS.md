@@ -24,6 +24,10 @@ Hackathon: AISCO "AI Supply Chain Observatory", Food Banks + AI. Judging July 17
       by any route/component
 - [ ] Reconcile `docs/PITCH.md` / `docs/DEMO_SCRIPT.md` narrative with the widened (all-7-themes) scope —
       they still read fishery/canning-first
+- [x] Commit the TideLift design system to the repo (`design-system/`) — tokens, assets, components, Hub screens
+- [ ] Restyle the dashboard from the old light/teal scheme to the Control Tower palette in `design-system/tokens/`
+- [ ] Fix the Cloudflare Pages git integration (failing on every push; deploys are manual until then) —
+      see the 2026-07-20 log entry for what's been ruled out
 
 ## Session Log
 
@@ -162,3 +166,34 @@ session, left as-is for Ken to triage). All work below is external deliverables 
 channels to private; otherwise the standing roadmap is unchanged (verify ACCFB §3 figures, bring
 forecast/procure/canning/analyst up to route.ts's bar, wire the dashboard to real agent output, real CV
 inference endpoint for `/intake`).
+
+### 2026-07-20 — deploy recovery + design system committed
+
+- **Found production two days stale.** `tidelift.tatinc.us` was serving `9820a3e`; the two deploys since
+  (`e7c36ab` `/architecture`, `ebe1fc6` docs) had both failed on Cloudflare Pages without any visible signal.
+  GitHub Actions CI was green on both, so nothing in the normal workflow flagged it.
+- **Shipped current `main`** by building locally and pushing straight to Pages with
+  `wrangler pages deploy .svelte-kit/cloudflare`, bypassing CF's build environment. Verified rather than
+  assumed: production `entry/app.*.js` hash matches the deployment URL, `/architecture` and `/intake` both
+  render live, and the dockside bin table on `/intake` is real `intake.ts` output computed in production.
+- **Documented a verification trap:** `apps/web/src/routes/+layout.ts` sets `ssr = false`, so every URL on the
+  site returns HTTP 200 whether or not the route exists. Curling a path cannot tell you whether a page
+  shipped — check the route list inside the live client manifest instead.
+- **CF git integration is still broken** (now 3/3 failures, including on this session's commit). Root cause
+  unconfirmed — the `CF-TAT` token lacks Pages scope, so the build log was unreadable from the CLI. The build
+  itself is sound: CI passes on Node 22, local build takes ~7s, no file exceeds the 25 MiB limit. Deliberately
+  left broken for now to get the upgraded site visible; deploys are manual until it's fixed.
+- **Committed the design system** as `design-system/` (renamed from a folder name containing spaces): tokens,
+  logo/font/photo assets, core + product components, foundation guidelines, brand slide templates, and the
+  three Operations Intelligence Hub screens. Trimmed 36 MB → 7.2 MB by excluding, via a documented
+  `design-system/.gitignore`, a byte-identical duplicate of `TideLift_Present.pptx` already committed under
+  `apps/web/static/media/` and the regenerable `extracted/` renders. Both remain on local disk.
+- **Correction to the record:** the interactive `/intake` prototype was already merged into `main` and already
+  live — `feat/working-prototype` sits *behind* `main`, not ahead of it, and can be deleted. The genuinely
+  unshipped upgrade is visual: the live app still wears the old light/teal scheme rather than the Control
+  Tower palette.
+
+**Next up:** restyle the dashboard to the committed `design-system/` tokens (the one remaining upgrade that
+changes what people see); fix or replace the CF git integration — the durable option is deploying from GitHub
+Actions, blocked on adding `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` as repo secrets, since
+`kenadams1990/FoodBank-Hack` is a personal repo and the `tatinc23` org secrets do not reach it.
