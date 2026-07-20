@@ -45,13 +45,16 @@
     <div class="flex items-start justify-between gap-2 mb-1">
       <!-- Species + vessel -->
       <div>
-        <h3 class="font-display font-bold text-ink text-base leading-tight">{species}</h3>
-        <p class="font-mono text-[11px] text-ink/40 mt-0.5 truncate max-w-[140px]">{vessel}</p>
+        <h3 class="font-display font-bold text-foam text-base leading-tight">{species}</h3>
+        <p class="font-mono text-[11px] text-foam/35 mt-0.5 truncate max-w-[140px]">{vessel}</p>
       </div>
       <!-- Score badge -->
       {#if lot.score != null}
-        <span class="shrink-0 font-mono text-xs font-medium bg-brand/10 text-brand border border-brand/20 rounded px-2 py-1">
-          {lot.score}<span class="text-brand/50">/100</span>
+        <span
+          class="shrink-0 font-mono text-xs font-medium text-salmon border border-salmon/30 rounded-sm px-2 py-1"
+          style="background: rgba(232, 101, 74, .08);"
+        >
+          {lot.score}<span class="text-salmon/50">/100</span>
         </span>
       {/if}
     </div>
@@ -65,13 +68,13 @@
   <div class="px-4 py-3">
     <!-- Main readout row -->
     <div class="flex items-baseline gap-3 mb-3">
-      <span class="font-display font-extrabold text-2xl text-ink">
+      <span class="font-display font-extrabold text-2xl text-foam">
         {lot.lbs.toLocaleString()}
       </span>
-      <span class="font-mono text-xs text-ink/40">lbs</span>
-      <span class="ml-auto font-mono text-base font-medium text-ink/70">
+      <span class="font-mono text-xs text-foam/35">lbs</span>
+      <span class="ml-auto font-mono text-base font-medium text-mist">
         {lot.proposedDiscountPct}%
-        <span class="font-mono text-xs text-ink/30">disc</span>
+        <span class="font-mono text-xs text-foam/35">disc</span>
       </span>
     </div>
 

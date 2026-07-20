@@ -2,83 +2,165 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design tokens ──────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   TideLift — Control Tower design system (Tide palette)
+   Values are authoritative from design-system/tokens/*.css (brand guidelines
+   p.06–07). The legacy light/teal hackathon palette is preserved as --legacy-*
+   for any screen still mid-migration; nothing shipped should reference it.
+   ═════════════════════════════════════════════════════════════════════════ */
 :root {
-  --ink:        #0B2027;
-  --brand:      #0E7C86;
-  --brand-deep: #094248;
-  --surface:    #F4F7F7;
-  --card:       #FFFFFF;
-  --line:       #DDE6E6;
-  --impact:     #F26A4B;
-  --warn:       #E8B23A;
-  --alert:      #D64545;
-  --ok:         #2E9E7B;
+  /* ── Core palette ── */
+  --slate-ink: #1C2B2C;   /* page background */
+  --deep-tide: #123B41;   /* panel / surface */
+  --salmon:    #E8654A;   /* primary signal / accent — one CTA per screen */
+  --foam:      #F1F7F5;   /* text-on-dark / light surface */
+  --ink:       #0B0F13;   /* deepest surface — topbar, hero band */
+  --mist:      #B9C4CC;   /* secondary text */
+  --fog:       #D8E3E0;
+
+  /* ── Semantic (product UI — muted, never neon) ── */
+  --success:   #3F6B4F;
+  --success-text: #7FA98C;
+  --warning:   #E8A33C;
+  --danger:    #C4432E;
+  --danger-text: #E4715A;
+
+  /* ── Aliases ── */
+  --surface-panel:  var(--deep-tide);
+  --surface-raised: #16333A;
+  --surface-error:  #3A2A22;
+  --accent:         var(--salmon);
+  --accent-hover:   #EF7D66;
+  --text-primary:   var(--foam);
+  --text-secondary: var(--mist);
+  --text-tertiary:  rgba(185, 196, 204, .55);
+  --text-on-accent: var(--ink);
+  --line:           rgba(241, 247, 245, .08);
+  --line-strong:    rgba(241, 247, 245, .16);
+  --grid-line:      rgba(241, 247, 245, .05);
+
+  /* ── Type ── */
+  --font-display: 'Space Grotesk', sans-serif;  /* headlines, wordmark, section titles — 500/700 */
+  --font-mono:    'IBM Plex Mono', monospace;    /* body & data — every metric, log line, label */
+
+  /* ── Shape / motion ── */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --ease-out:  cubic-bezier(.2, .8, .2, 1);
+  --dur-fast:  120ms;
+  --dur-base:  200ms;
+
+  /* ── Legacy hackathon palette (superseded; do not use in shipped UI) ── */
+  --legacy-teal:      #0E7C86;
+  --legacy-teal-deep: #094248;
+  --legacy-ink:       #0B2027;
+  --legacy-surface:   #F4F7F7;
+  --legacy-line:      #DDE6E6;
+  --legacy-coral:     #F26A4B;
 }
 
-/* ─── Base typography ────────────────────────────────────────────────────── */
+/* ═══ Base ═══════════════════════════════════════════════════════════════ */
 body {
-  font-family: 'IBM Plex Sans', sans-serif;
-  background-color: var(--surface);
-  color: var(--ink);
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background-color: var(--slate-ink);
+  /* Blueprint/control-room grid — 60px hairlines, flat, no gradient wash */
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 60px 60px;
 }
 
 h1, h2, h3, .font-display {
-  font-family: 'Archivo', sans-serif;
+  font-family: var(--font-display);
 }
 
-/* ─── Utility classes ────────────────────────────────────────────────────── */
+a {
+  color: var(--salmon);
+  text-decoration: none;
+}
+a:hover { color: var(--accent-hover); }
 
-/* Mono chip — for numeric readouts: lbs, °C, %, lot codes */
-.readout {
-  @apply font-mono text-xs tracking-tight bg-surface border border-line rounded px-1.5 py-0.5 text-ink;
-}
-
-/* Catch-ticket card wrapper */
-.catch-ticket {
-  @apply bg-white border border-line rounded-xl overflow-hidden
-         hover:border-brand transition-colors duration-200;
-  box-shadow: 0 1px 4px rgba(11,32,39,.06), 0 0 0 0 transparent;
-}
-.catch-ticket:hover {
-  box-shadow: 0 4px 16px rgba(14,124,134,.12);
-}
-
-/* Cold-chain flow strip */
-.flow-strip {
-  @apply flex items-center gap-0 font-mono text-xs;
-}
-.flow-strip__node {
-  @apply flex items-center gap-1 text-ink/50;
-}
-.flow-strip__node--active {
-  @apply text-brand font-medium;
-}
-.flow-strip__connector {
-  @apply mx-1.5 text-line;
-}
-
-/* Thermal status chips */
-.chip-ok   { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-ok/10 text-ok border border-ok/20; }
-.chip-warn { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-warn/10 text-warn border border-warn/20; }
-.chip-alert { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-alert/10 text-alert border border-alert/20; }
-.chip-neutral { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-surface text-ink/50 border border-line; }
-
-/* Impact number — coral, reserved solely for this purpose */
-.impact-number {
-  font-family: 'Archivo', sans-serif;
-  color: var(--impact);
-  font-weight: 800;
+code, pre, .data, .font-mono {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+/* Live pulse dot keyframes — kept outside @layer so it's never purged/reordered */
+@keyframes tlPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
-/* Reduced-motion overrides */
+/* ═══ Component utility classes ══════════════════════════════════════════
+   In @layer components so any Tailwind color/spacing utility layered on top
+   (e.g. `class="tl-panel border-salmon/40"`) WINS the specificity tie — the
+   component class is the default, the utility is the override. Same class
+   names as the legacy app so existing markup keeps resolving. */
+@layer components {
+  /* Uppercase micro-label — mono, wide 0.28em tracking (brand p.07) */
+  .tl-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* Mono readout — lbs, °C, %, lot codes */
+  .readout {
+    @apply font-mono text-xs tracking-tight px-1.5 py-0.5;
+    border-radius: var(--radius-sm);
+    background: rgba(241, 247, 245, .04);
+    border: 1px solid var(--line-strong);
+    color: var(--text-primary);
+  }
+
+  /* Panel — Deep Tide rectangle, hairline, sharp corners, no shadow */
+  .tl-panel {
+    background: var(--surface-panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Catch-ticket / surplus card — flat Tide panel, salmon hairline on hover */
+  .catch-ticket {
+    @apply overflow-hidden transition-colors duration-200;
+    background: var(--surface-panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+  .catch-ticket:hover { border-color: rgba(232, 101, 74, .4); }
+
+  /* Cold-chain flow strip */
+  .flow-strip { @apply flex items-center gap-0 font-mono text-xs; }
+  .flow-strip__node { @apply flex items-center gap-1; color: var(--text-tertiary); }
+  .flow-strip__node--active { color: var(--salmon); @apply font-medium; }
+  .flow-strip__connector { @apply mx-1.5; color: var(--line-strong); }
+
+  /* Status chips — muted semantic tints on dark */
+  .chip-ok      { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5; border-radius: var(--radius-sm); color: var(--success-text); background: rgba(63, 107, 79, .14); border: 1px solid rgba(63, 107, 79, .5); }
+  .chip-warn    { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5; border-radius: var(--radius-sm); color: var(--warning);      background: rgba(232, 163, 60, .10); border: 1px solid rgba(232, 163, 60, .4); }
+  .chip-alert   { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5; border-radius: var(--radius-sm); color: var(--danger-text); background: rgba(196, 67, 46, .14);  border: 1px solid rgba(196, 67, 46, .5); }
+  .chip-neutral { @apply inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5; border-radius: var(--radius-sm); color: var(--mist);         background: rgba(241, 247, 245, .04); border: 1px solid var(--line-strong); }
+
+  /* Impact number — Space Grotesk, salmon, tabular. Reserved for headline metrics. */
+  .impact-number {
+    font-family: var(--font-display);
+    color: var(--salmon);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .tl-pulse { animation: tlPulse 3s var(--ease-out) infinite; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--slate-ink); }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--salmon); }
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
